@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Env
+.env
+.env.*
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Models
+*.pt
+*.bin
+*.model
+backend/ml/genkit-model/
+backend/chroma_db/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+*.cache
+*.tmp

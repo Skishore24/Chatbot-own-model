@@ -1,0 +1,62 @@
+[
+  {
+    "instruction": "What is Genkit?",
+    "output": "Genkit is a technology and creative solutions provider founded in June 2024. We specialize in helping small and mid-sized businesses grow through custom tech solutions, digital presence, and impactful content."
+  },
+  {
+    "instruction": "Tell me about Genkit's history.",
+    "output": "Genkit was founded in June 2024 by a group of eight school friends. Since then, it has grown into a team of 10 professionals dedicated to providing clever and dependable digital solutions."
+  },
+  {
+    "instruction": "What is the mission of Genkit?",
+    "output": "Our mission is 'Innovating Today. Leading Tomorrow.' We aim to provide reasonably priced, high-quality solutions tailored to help our clients achieve their specific business goals."
+  },
+  {
+    "instruction": "What services does Genkit offer?",
+    "output": "Genkit offers three core services: Web Development (Custom sites, SEO), Video Editing (Storytelling, Reels/YouTube optimization), and Graphic Designing (Brand identity, Logos, Social Media creatives)."
+  },
+  {
+    "instruction": "Do you do web development?",
+    "output": "Yes, we provide custom web development services including SEO optimization and ongoing maintenance. We use technologies like Python, Node.js, Java, MySQL, and MongoDB."
+  },
+  {
+    "instruction": "Can you help me with video editing?",
+    "output": "Absolutely! We specialize in brand storytelling and platform-specific optimization for YouTube and Instagram Reels, ensuring fast turnaround times using tools like Premiere Pro and After Effects."
+  },
+  {
+    "instruction": "I need a logo. Can you help?",
+    "output": "Yes, our Graphic Designing team specializes in brand identity and custom logo creation. We also design professional banners and social media creatives using Photoshop, Figma, and Illustrator."
+  },
+  {
+    "instruction": "What technologies do you use for development?",
+    "output": "Our development stack includes Python, Node.js, Java, MySQL, MongoDB, and we manage our code via GitHub."
+  },
+  {
+    "instruction": "What tools do your designers use?",
+    "output": "Our creative team uses professional tools like Photoshop (Ps), Figma, Illustrator (Ai), Premiere Pro (Pr), and After Effects (Ae)."
+  },
+  {
+    "instruction": "How can I contact Genkit?",
+    "output": "You can reach us at genkit.tech@gmail.com or visit our website at www.genkit.in to fill out our contact form. We are committed to quick replies!"
+  },
+  {
+    "instruction": "Where is Genkit located?",
+    "output": "You can find all our details and contact us through our website at www.genkit.in or via email at genkit.tech@gmail.com."
+  },
+  {
+    "instruction": "Who founded Genkit?",
+    "output": "Genkit was founded by a group of eight school friends in June 2024, who shared a vision for providing high-quality digital and creative solutions."
+  },
+  {
+    "instruction": "Why should I choose Genkit?",
+    "output": "You should choose Genkit for our client-first approach, reliable partnership, and commitment to creative excellence. We provide premium quality solutions at reasonable prices."
+  },
+  {
+    "instruction": "what tools do you use",
+    "output": "We use Python, Node.js, Java, MySQL, MongoDB, and design tools like Figma, Photoshop, and Illustrator."
+  },
+  {
+    "instruction": "tools used in genkit",
+    "output": "Genkit uses Python, Node.js, Java, MySQL, MongoDB, Figma, Photoshop, and Illustrator."
+  }
+]

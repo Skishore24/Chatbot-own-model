@@ -1,0 +1,43 @@
+GENKIT COMPANY PROFILE
+--------------------------------------------------
+OVERVIEW:
+Genkit is a technology and creative solutions provider founded in June 2024. Originally started by a group of eight school friends, the team has now grown to 10 professionals dedicated to helping small and mid-sized businesses grow through digital innovation.
+
+MISSION:
+"Innovating Today. Leading Tomorrow."
+Genkit's mission is to provide clever, dependable, and reasonably priced solutions tailored to specific business objectives.
+
+--------------------------------------------------
+CORE SERVICES:
+
+1. WEB DEVELOPMENT:
+- Custom website creation tailored to business needs.
+- SEO optimization for better search visibility.
+- Ongoing maintenance and technical support.
+- Technologies: Python, Node.js, Java, MySQL, MongoDB, GitHub.
+
+2. VIDEO EDITING:
+- Brand storytelling through high-quality video content.
+- Platform-specific optimization for YouTube, Instagram, and Reels.
+- Fast turnaround times for time-sensitive projects.
+- Tools: Premiere Pro, After Effects.
+
+3. GRAPHIC DESIGNING:
+- Brand identity design and custom logo creation.
+- Professional banners and social media creatives.
+- UI/UX design and prototyping.
+- Tools: Photoshop, Figma, Illustrator.
+
+--------------------------------------------------
+CONTACT INFORMATION:
+- Email: genkit.tech@gmail.com
+- Website: https://www.genkit.in
+- Social Presence: Instagram, X (Twitter), YouTube, GitHub, WhatsApp.
+- Project Inquiry: Quick response commitment via website contact form.
+
+--------------------------------------------------
+OUR APPROACH:
+- Client-First Approach: We prioritize your business goals.
+- Reliable Partnership: We act as an extension of your team.
+- Creative Excellence: High-standard design and content.
+- Trusted Support: Dependable technical and creative support.
