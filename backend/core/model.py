@@ -11,7 +11,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 logger.info(f"Loading Genkit model on {device}...")
 
-# ❌ HARD FAIL (as you want)
+# HARD FAIL
 if not os.path.exists(os.path.join(MODEL_DIR, "config.json")):
     raise RuntimeError("❌ Train your model first: python ml/train.py")
 
@@ -34,33 +34,32 @@ logger.info("✅ Model loaded successfully")
 
 
 # ─────────────────────────────────────────────
-# CLEAN RESPONSE
+# CLEAN OUTPUT (VERY IMPORTANT)
 # ─────────────────────────────────────────────
 def clean_output(text: str, prompt: str) -> str:
-    """
-    Extract clean answer from model output
-    """
-
     if "ANSWER:" in text:
         text = text.split("ANSWER:")[-1]
 
-    # remove prompt echo
-    text = text.replace(prompt, "")
+    text = text.replace(prompt, "").strip()
 
-    # remove extra lines
-    text = text.strip().split("\n")[0]
+    # remove repeated lines
+    lines = []
+    for l in text.split("\n"):
+        l = l.strip()
+        if l and l not in lines:
+            lines.append(l)
 
-    # remove weird repetition
-    if len(text) > 300:
-        text = text[:300]
+    text = "\n".join(lines)
 
-    return text.strip()
+    # limit length
+    return text[:200]
 
 
 # ─────────────────────────────────────────────
-# STREAM GENERATION (REAL STREAM)
+# REAL STREAMING (TOKEN BY TOKEN)
 # ─────────────────────────────────────────────
 def generate_stream(prompt):
+
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
     streamer = TextIteratorStreamer(
@@ -74,27 +73,36 @@ def generate_stream(prompt):
         streamer=streamer,
         max_new_tokens=80,
         do_sample=True,
-        temperature=0.6,
-        top_p=0.85,
-        repetition_penalty=1.2,
-        eos_token_id=tokenizer.eos_token_id
+        temperature=0.6,          # 🔥 improved
+        top_p=0.9,
+        repetition_penalty=1.3,   # 🔥 reduce repetition
+        no_repeat_ngram_size=3,   # 🔥 critical
+        eos_token_id=tokenizer.eos_token_id,
     )
 
     thread = Thread(target=model.generate, kwargs=generation_kwargs)
     thread.start()
 
+    partial_text = ""
+
     for token in streamer:
-        if "\n" in token:
+        partial_text += token
+
+        # 🔥 STOP early if structure detected
+        if partial_text.count("•") >= 3:
             break
+
+        # 🔥 STOP if too long
+        if len(partial_text) > 200:
+            break
+
         yield token
 
+
 # ─────────────────────────────────────────────
-# SYNC GENERATION (OPTIONAL)
+# FULL RESPONSE (NON-STREAM)
 # ─────────────────────────────────────────────
 def generate_response(prompt: str) -> str:
-    """
-    Full response (non-stream)
-    """
 
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
@@ -103,9 +111,10 @@ def generate_response(prompt: str) -> str:
         max_new_tokens=80,
         do_sample=True,
         temperature=0.6,
-        top_p=0.85,
-        repetition_penalty=1.2,
-        eos_token_id=tokenizer.eos_token_id
+        top_p=0.9,
+        repetition_penalty=1.3,
+        no_repeat_ngram_size=3,
+        eos_token_id=tokenizer.eos_token_id,
     )
 
     text = tokenizer.decode(outputs[0], skip_special_tokens=True)
