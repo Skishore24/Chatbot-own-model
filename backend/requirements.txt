@@ -2,10 +2,10 @@ fastapi
 uvicorn
 requests
 pydantic
-chromadb
 python-dotenv
-transformers
-datasets
-accelerate
-torch
 sentence-transformers
+numpy
+torch
+transformers
+accelerate
+datasets

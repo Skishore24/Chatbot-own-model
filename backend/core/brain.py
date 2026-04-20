@@ -1,196 +1,112 @@
-from typing import Iterator
-from services.vector_store import search, search_memory, save_memory
-from core.model import generate_stream
-from core.intent import detect_intent
-from services.memory import (
-    update_user_info,
-    get_user_info,
-    save_lead_to_db,
-)
-from utils.helpers import detect_lead
-from app.config import logger
-from db.database import get_connection
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
+from threading import Thread, Lock
+import os
+from app.config import MODEL_DIR, logger
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+logger.info(f"Device: {device}")
+
+_tokenizer = None
+_model = None
+_model_lock = Lock()
 
 
-# ─────────────────────────────────────────────
-# VALIDATION (HALLUCINATION KILLER)
-# ─────────────────────────────────────────────
-def is_valid_response(response: str, context: str) -> bool:
-    if not response:
-        return False
+def _load_model():
+    global _tokenizer, _model
 
-    if len(response.split()) < 3:
-        return False
+    if _model is not None:
+        return True
 
-    context_words = set(context.lower().split())
-    response_words = set(response.lower().split())
+    with _model_lock:
+        if _model is not None:
+            return True
 
-    overlap = len(context_words & response_words)
+        config_path = os.path.join(MODEL_DIR, "config.json")
 
-    return overlap >= 2
+        if not os.path.exists(config_path):
+            raise RuntimeError(f"Model not found at {MODEL_DIR}. Run training first.")
 
+        try:
+            logger.info("Loading Genkit model...")
 
-# ─────────────────────────────────────────────
-# CLEAN CONTEXT
-# ─────────────────────────────────────────────
-def clean_context(context: str) -> str:
-    lines = context.split("\n")
-    clean = []
+            _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, use_fast=True)
 
-    for l in lines:
-        l = l.strip()
+            if _tokenizer.pad_token is None:
+                _tokenizer.pad_token = _tokenizer.eos_token
 
-        if len(l) < 20:
-            continue
+            _model = AutoModelForCausalLM.from_pretrained(
+                MODEL_DIR,
+                torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+                low_cpu_mem_usage=True,
+            ).to(device)
 
-        clean.append(l)
+            _model.eval()
 
-        if len(clean) >= 2:
-            break
+            logger.info("Model loaded successfully")
+            return True
 
-    return "\n".join(clean)
-
-
-# ─────────────────────────────────────────────
-# CLEAN MEMORY
-# ─────────────────────────────────────────────
-def clean_memory(memory: str) -> str:
-    if not memory:
-        return ""
-
-    lines = memory.split("\n")
-    return "\n".join(lines[-2:])
+        except Exception as e:
+            logger.exception("Model load failed")
+            raise e
 
 
-# ─────────────────────────────────────────────
-# CLEAN RESPONSE
-# ─────────────────────────────────────────────
-def clean_response(text: str) -> str:
-    lines = text.split("\n")
-    cleaned = []
-
-    for line in lines:
-        line = line.strip()
-
-        if not line:
-            continue
-
-        if not line.startswith("•"):
-            line = "• " + line.lstrip("-* ")
-
-        words = line.split()[:10]
-        cleaned.append(" ".join(words))
-
-        if len(cleaned) >= 3:
-            break
-
-    return "\n".join(cleaned)
+# lazy load
+_load_model()
 
 
-# ─────────────────────────────────────────────
-# AUTO DATASET SAVE
-# ─────────────────────────────────────────────
-def save_training_data(question: str, answer: str):
-    try:
-        with get_connection() as conn:
-            conn.execute(
-                "INSERT INTO feedback (question, answer, rating) VALUES (?, ?, ?)",
-                (question, answer, 5)
-            )
-            conn.commit()
-    except:
-        pass
+def generate_stream(prompt: str):
+    """Production-safe streaming generator"""
 
-
-# ─────────────────────────────────────────────
-# CORE AI
-# ─────────────────────────────────────────────
-def get_answer(query: str, session_id: str) -> Iterator[str]:
-
-    # 1. User memory
-    update_user_info(session_id, query)
-    user = get_user_info(session_id)
-
-    # 2. Intent check
-    guard = detect_intent(query)
-    if guard["is_out_of_scope"]:
-        yield "I can help only with Genkit services like web, video, and design."
+    if _model is None or _tokenizer is None:
+        yield "Model not available."
         return
 
-    # 3. Get context (RAG)
-    context = search(query)
-
-    if not context:
-        yield "I can help only with Genkit services like web, video, and design."
-        return
-
-    context = clean_context(context)
-
-    # 4. Get memory
-    memory = clean_memory(search_memory(query, session_id))
-
-    # 5. Prompt (STRICT)
-    prompt = f"""
-You are Genkit AI.
-
-STRICT RULES:
-- Answer ONLY from CONTEXT
-- DO NOT add extra info
-- If not found → say EXACTLY:
-  "I can help only with Genkit services"
-
-FORMAT:
-• Max 3 bullet points
-• Each point 5–10 words
-
-CONTEXT:
-{context}
-
-MEMORY:
-{memory}
-
-QUESTION:
-{query}
-
-ANSWER:
-"""
-
     try:
-        # 6. Generate FULL response
-        full_response = ""
+        torch.set_grad_enabled(False)
 
-        for chunk in generate_stream(prompt):
-            full_response += chunk
+        inputs = _tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=512
+        ).to(device)
 
-        # 7. Clean
-        full_response = full_response[:300]
-        full_response = clean_response(full_response)
+        streamer = TextIteratorStreamer(
+            _tokenizer,
+            skip_prompt=True,
+            skip_special_tokens=True,
+            timeout=20.0,
+        )
 
-        # 8. HARD FAIL SAFE
-        if "•" not in full_response:
-            yield "I can help only with Genkit services."
-            return
+        generation_kwargs = dict(
+            **inputs,
+            streamer=streamer,
+            max_new_tokens=150,
+            do_sample=True,
+            temperature=0.5,
+            top_p=0.9,
+            repetition_penalty=1.3,
+            no_repeat_ngram_size=4,
+            eos_token_id=_tokenizer.eos_token_id,
+            pad_token_id=_tokenizer.pad_token_id,
+        )
 
-        # 9. Validate
-        if not is_valid_response(full_response, context):
-            logger.warning("⚠️ Invalid response blocked")
-            yield "I can help only with Genkit services."
-            return
+        thread = Thread(target=_model.generate, kwargs=generation_kwargs, daemon=True)
+        thread.start()
 
-        # 10. Output
-        for line in full_response.split("\n"):
-            yield line + "\n"
+        collected = ""
 
-        # 11. Save memory
-        save_memory(session_id, f"User: {query} | Assistant: {full_response}")
+        for token in streamer:
+            collected += token
+            yield token
 
-        # 12. Auto dataset learning
-        save_training_data(query, full_response)
+            # safe stop
+            if len(collected) > 500:
+                break
+
+        thread.join(timeout=3)
 
     except Exception as e:
-        logger.error(f"Error: {e}")
-        yield "⚠️ Something went wrong."
-
-    # 13. Lead capture
-    if detect_lead(query) or guard["intent"] in ["pricing", "contact"]:
-        save_lead_to_db(user.get("name", "Client"), "Interested via chatbot")
+        logger.exception("Generation error")
+        yield "⚠️ Model error. Please try again."

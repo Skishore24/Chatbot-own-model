@@ -1,122 +1,125 @@
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, TextIteratorStreamer
-import os
-from threading import Thread
-from app.config import MODEL_DIR, logger
+from typing import Iterator
+from rag.retriever import retrieve
+from rag.reranker import rerank
+from services.vector_store import search_memory, save_memory
 
-# ─────────────────────────────────────────────
-# DEVICE
-# ─────────────────────────────────────────────
-device = "cuda" if torch.cuda.is_available() else "cpu"
+from core.brain import generate_stream
+from core.intent import detect_intent
+from services.memory import update_user_info, get_user_info, save_lead_to_db
+from utils.helpers import is_valid_query, detect_lead
+from app.config import logger
 
-logger.info(f"Loading Genkit model on {device}...")
-
-# HARD FAIL
-if not os.path.exists(os.path.join(MODEL_DIR, "config.json")):
-    raise RuntimeError("❌ Train your model first: python ml/train.py")
-
-# ─────────────────────────────────────────────
-# LOAD MODEL
-# ─────────────────────────────────────────────
-tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_DIR,
-    torch_dtype=torch.float16 if device == "cuda" else torch.float32
-).to(device)
-
-model.eval()
-
-logger.info("✅ Model loaded successfully")
+FALLBACK = "I can help only with Genkit services like web, video, and design."
 
 
-# ─────────────────────────────────────────────
-# CLEAN OUTPUT (VERY IMPORTANT)
-# ─────────────────────────────────────────────
-def clean_output(text: str, prompt: str) -> str:
-    if "ANSWER:" in text:
-        text = text.split("ANSWER:")[-1]
-
-    text = text.replace(prompt, "").strip()
-
-    # remove repeated lines
-    lines = []
-    for l in text.split("\n"):
-        l = l.strip()
-        if l and l not in lines:
-            lines.append(l)
-
-    text = "\n".join(lines)
-
-    # limit length
-    return text[:200]
+def build_context(docs):
+    return "\n".join(docs[:5]) if docs else ""
 
 
-# ─────────────────────────────────────────────
-# REAL STREAMING (TOKEN BY TOKEN)
-# ─────────────────────────────────────────────
-def generate_stream(prompt):
+def trim_memory(memory: str):
+    return "\n".join(memory.split("\n")[-3:]) if memory else ""
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
 
-    streamer = TextIteratorStreamer(
-        tokenizer,
-        skip_prompt=True,
-        skip_special_tokens=True
-    )
+def clean_response(text: str):
+    lines = text.strip().split("\n")
+    result = []
+    seen = set()
 
-    generation_kwargs = dict(
-        **inputs,
-        streamer=streamer,
-        max_new_tokens=80,
-        do_sample=True,
-        temperature=0.6,          # 🔥 improved
-        top_p=0.9,
-        repetition_penalty=1.3,   # 🔥 reduce repetition
-        no_repeat_ngram_size=3,   # 🔥 critical
-        eos_token_id=tokenizer.eos_token_id,
-    )
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
 
-    thread = Thread(target=model.generate, kwargs=generation_kwargs)
-    thread.start()
+        if not line.startswith("•"):
+            line = "• " + line
 
-    partial_text = ""
+        key = line.lower()[:40]
+        if key in seen:
+            continue
 
-    for token in streamer:
-        partial_text += token
+        seen.add(key)
+        result.append(" ".join(line.split()[:25]))
 
-        # 🔥 STOP early if structure detected
-        if partial_text.count("•") >= 3:
+        if len(result) >= 3:
             break
 
-        # 🔥 STOP if too long
-        if len(partial_text) > 200:
-            break
-
-        yield token
+    return "\n".join(result)
 
 
-# ─────────────────────────────────────────────
-# FULL RESPONSE (NON-STREAM)
-# ─────────────────────────────────────────────
-def generate_response(prompt: str) -> str:
+def is_grounded(response: str, context: str):
+    if not response:
+        return False
 
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    ctx = set(context.lower().split())
+    res = set(response.lower().split())
 
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=80,
-        do_sample=True,
-        temperature=0.6,
-        top_p=0.9,
-        repetition_penalty=1.3,
-        no_repeat_ngram_size=3,
-        eos_token_id=tokenizer.eos_token_id,
-    )
+    return len(ctx & res) >= 2
 
-    text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-    return clean_output(text, prompt)
+def get_answer(query: str, session_id: str) -> Iterator[str]:
+
+    if not is_valid_query(query):
+        yield FALLBACK
+        return
+
+    update_user_info(session_id, query)
+    user = get_user_info(session_id)
+
+    guard = detect_intent(query)
+    if guard["is_out_of_scope"]:
+        yield FALLBACK
+        return
+
+    docs = rerank(query, retrieve(query))
+    memory = trim_memory(search_memory(query, session_id))
+
+    if not docs and not memory:
+        yield FALLBACK
+        return
+
+    context = build_context(docs)
+
+    prompt = f"""### SYSTEM:
+You are Genkit AI assistant.
+
+STRICT RULES:
+- Answer ONLY from CONTEXT
+- Use 2–3 bullet points
+
+### CONTEXT:
+{context}
+
+### MEMORY:
+{memory}
+
+### USER:
+{query}
+
+### ASSISTANT:
+"""
+
+    try:
+        raw = ""
+
+        for chunk in generate_stream(prompt):
+            raw += chunk
+
+        cleaned = clean_response(raw)
+
+        if not cleaned or not is_grounded(cleaned, context):
+            yield FALLBACK
+            return
+
+        for line in cleaned.split("\n"):
+            yield line + "\n"
+
+        save_memory(session_id, f"{query} → {cleaned[:80]}")
+
+        if detect_lead(query):
+            name = user.get("name") or "Visitor"
+            email = user.get("email") or "lead@genkit.in"
+            save_lead_to_db(name, email)
+
+    except Exception as e:
+        logger.exception("Pipeline error")
+        yield "⚠️ Something went wrong."

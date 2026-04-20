@@ -20,6 +20,7 @@ APP_NAME = "Genkit AI"
 APP_VERSION = "2.1.0"
 
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",")]
 
 # ─────────────────────────────────────────────
 # PATH CONFIG (ABSOLUTE)

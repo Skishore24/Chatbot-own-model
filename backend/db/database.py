@@ -3,15 +3,18 @@ from app.config import DB_PATH, logger
 
 
 # ─────────────────────────────────────────────
-# CONNECTION (OPTIMIZED)
+# CONNECTION (PRODUCTION SAFE)
 # ─────────────────────────────────────────────
 def get_connection():
-    """Returns optimized SQLite connection (production-ready)."""
-    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
+    conn = sqlite3.connect(
+        DB_PATH,
+        timeout=10,  # prevents "database is locked"
+        check_same_thread=False
+    )
     conn.row_factory = sqlite3.Row
 
-    # 🔥 Performance optimizations
-    conn.execute("PRAGMA journal_mode=WAL;")   # prevents locking
+    # Performance tuning
+    conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA synchronous=NORMAL;")
     conn.execute("PRAGMA temp_store=MEMORY;")
 
@@ -19,11 +22,9 @@ def get_connection():
 
 
 # ─────────────────────────────────────────────
-# INIT DATABASE
+# INIT DATABASE (PRODUCTION READY)
 # ─────────────────────────────────────────────
 def init_db():
-    """Initializes all database tables and indexes."""
-
     try:
         with get_connection() as conn:
             cur = conn.cursor()
@@ -46,12 +47,11 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 email TEXT,
-                source TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             """)
 
-            # ───────── FEEDBACK (IMPORTANT FOR AI TRAINING) ─────────
+            # ───────── FEEDBACK ─────────
             cur.execute("""
             CREATE TABLE IF NOT EXISTS feedback (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,19 +63,18 @@ def init_db():
             )
             """)
 
-            # ───────── INDEXES (CRITICAL FOR PERFORMANCE) ─────────
+            # ───────── INDEXES (IMPORTANT) ─────────
             cur.execute("CREATE INDEX IF NOT EXISTS idx_chats_session ON chats(session_id)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_chats_time ON chats(created_at)")
 
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON feedback(rating)")
             cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_session ON feedback(session_id)")
+            cur.execute("CREATE INDEX IF NOT EXISTS idx_feedback_rating ON feedback(rating)")
 
             cur.execute("CREATE INDEX IF NOT EXISTS idx_leads_time ON leads(created_at)")
 
             conn.commit()
-
             logger.info("✅ Database initialized (Production Ready)")
 
     except Exception as e:
-        logger.error(f"❌ Database initialization failed: {e}")
+        logger.error(f"❌ DB Error: {e}")
         raise

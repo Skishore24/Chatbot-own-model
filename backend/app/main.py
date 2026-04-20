@@ -1,14 +1,19 @@
 import os
+import sys
+from contextlib import asynccontextmanager
+
+# Fix module imports (Must be before local imports)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from api.routes import router
 from db.database import init_db
 from services.vector_store import load_and_split, add_documents
-from app.config import APP_NAME, APP_VERSION, FRONTEND_DIR, logger
+from app.config import APP_NAME, APP_VERSION, FRONTEND_DIR, ALLOWED_ORIGINS, logger
 
 
 # ─────────────────────────────────────────────
@@ -46,7 +51,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
