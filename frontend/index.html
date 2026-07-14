@@ -8,29 +8,34 @@
   <title>Genkit | AI Assistant</title>
   <link rel="icon" type="image/png" href="/favicon.ico">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Material Symbols (icons only) -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0">
 
-  <link rel="stylesheet" href="/static/style.css">
+  <!-- Inter font + all widget styles -->
+  <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
-  <!-- Floating Toggle Button -->
+  <!-- ── Floating Toggle Button ─────────────────────────────── -->
   <button class="chat-toggle" id="chatToggle" onclick="toggleChat()" aria-label="Open Genkit AI Chat">
-    <span class="material-symbols-rounded toggle-icon" id="toggleIcon">chat</span>
+    <span class="material-symbols-rounded">chat</span>
+    <span class="badge" id="chatBadge"></span>
   </button>
 
-  <!-- Chat Widget -->
+  <!-- ── Chat Widget ────────────────────────────────────────── -->
   <div class="chat-container" id="chatBox" role="dialog" aria-label="Genkit AI Chat">
 
     <!-- Header -->
     <div class="chat-header">
       <div class="bot-logo-header">
-        <img src="/static/images/logo1.png" alt="Genkit Logo">
+        <img src="./images/logo1.png" alt="Genkit Logo">
       </div>
-      <span class="header-title">Genkit Assistant</span>
+
+      <div class="header-info">
+        <span class="header-title">Genkit Assistant</span>
+        <span class="header-subtitle">Online · Ready to help</span>
+      </div>
+
       <button class="close-btn" onclick="toggleChat()" aria-label="Close chat">
         <span class="material-symbols-rounded">close</span>
       </button>
@@ -44,7 +49,7 @@
       <div class="chat-input-wrapper" id="inputWrapper">
         <textarea
           id="input"
-          placeholder="Ask Genkit anything..."
+          placeholder="Ask Genkit anything…"
           autocomplete="off"
           rows="1"
           aria-label="Chat message input"
@@ -53,11 +58,11 @@
           <span class="material-symbols-rounded">send</span>
         </button>
       </div>
-      <div class="footer-text">Genkit AI · Responses may not always be accurate</div>
+      <div class="footer-text">Genkit AI · Powered by our own LLM · Responses may not always be accurate</div>
     </div>
 
   </div>
 
-  <script src="/static/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

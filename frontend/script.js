@@ -1,5 +1,6 @@
 // ── Session Management ────────────────────────────────────────────────────────
 let sessionId = localStorage.getItem("genkit_session") || null;
+const API_BASE = window.location.port && window.location.port !== "8000" ? "http://127.0.0.1:8000" : "";
 
 // ── DOM Ready ─────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
@@ -11,20 +12,28 @@ document.addEventListener("DOMContentLoaded", () => {
   setTimeout(toggleChat, 500);
 });
 
-// ── Toggle Chat ───────────────────────────────────────────────────────────────
+// ── Toggle Chat ─────────────────────────────────────────────────────────────
 function toggleChat() {
   const chatBox = document.getElementById("chatBox");
-  const icon    = document.getElementById("toggleIcon");
+  const badge   = document.getElementById("chatBadge");
   const isOpen  = chatBox.classList.toggle("active");
-  icon.textContent = isOpen ? "close" : "chat";
+
+  // Toggle button always shows the chat bubble icon
+  // (header already has its own close ✕ button)
+  if (isOpen && badge) badge.style.display = "none";
   if (isOpen) setTimeout(() => document.getElementById("input").focus(), 300);
 }
 
 // ── Welcome Message ───────────────────────────────────────────────────────────
 function renderWelcome() {
   const text   = "👋 Hi! I'm the **Genkit AI Assistant**.\n\nAsk me anything about our services, portfolio, or how we can help your business!";
-  const bubble = appendBotMessage("");
+  const bubble = appendBotMessage("", false);
   typeWriter(text, bubble);
+}
+
+// ── Timestamp helper ──────────────────────────────────────────────────────────
+function getTime() {
+  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function typeWriter(text, element, speed = 14) {
@@ -79,7 +88,7 @@ async function sendMessage() {
   const typingIndicator = appendTypingIndicator();
 
   try {
-    const res = await fetch("/chat", {
+    const res = await fetch(`${API_BASE}/chat`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ q: text, session_id: sessionId || undefined }),
@@ -142,31 +151,62 @@ function appendUserMessage(text) {
   const msgBox = document.getElementById("messages");
   const row    = document.createElement("div");
   row.className = "message-row user-row";
-  row.innerHTML = `
-    <div class="avatar user-avatar">
-      <span class="material-symbols-rounded">person</span>
-    </div>
-    <div class="message">${escapeHTML(text)}</div>
-  `;
+
+  // avatar
+  const av = document.createElement("div");
+  av.className = "avatar user-avatar";
+  av.innerHTML = `<span class="material-symbols-rounded">person</span>`;
+
+  // bubble
+  const bubble = document.createElement("div");
+  bubble.className = "message user-message";
+  bubble.textContent = text;
+
+  // time
+  const time = document.createElement("span");
+  time.className = "msg-time user-time";
+  time.textContent = getTime();
+
+  // wrapper holds bubble + time, aligned right
+  const wrap = document.createElement("div");
+  wrap.className = "msg-wrap user-wrap";
+  wrap.appendChild(bubble);
+  wrap.appendChild(time);
+
+  row.appendChild(wrap);
+  row.appendChild(av);
   msgBox.appendChild(row);
   scrollToBottom();
 }
 
-function appendBotMessage(text) {
+function appendBotMessage(text, showTime = true) {
   const msgBox = document.getElementById("messages");
   const row    = document.createElement("div");
   row.className = "message-row bot-row";
 
-  const bubble  = document.createElement("div");
-  bubble.className = "message";
+  // avatar
+  const av = document.createElement("div");
+  av.className = "avatar bot-avatar";
+  av.innerHTML = `<img src="./images/logo1.png" alt="Genkit" class="bot-logo">`;
+
+  // bubble
+  const bubble = document.createElement("div");
+  bubble.className = "message bot-message";
   bubble.innerHTML = renderMarkdown(text);
 
-  row.innerHTML = `
-    <div class="avatar bot-avatar">
-      <img src="/static/images/logo1.png" alt="Genkit" class="bot-logo">
-    </div>
-  `;
-  row.appendChild(bubble);
+  // time
+  const time = document.createElement("span");
+  time.className = "msg-time";
+  if (showTime) time.textContent = getTime();
+
+  // wrapper holds bubble + time
+  const wrap = document.createElement("div");
+  wrap.className = "msg-wrap bot-wrap";
+  wrap.appendChild(bubble);
+  wrap.appendChild(time);
+
+  row.appendChild(av);
+  row.appendChild(wrap);
   msgBox.appendChild(row);
   scrollToBottom();
   return bubble;
@@ -179,7 +219,7 @@ function appendTypingIndicator() {
   row.className = "message-row bot-row";
   row.innerHTML = `
     <div class="avatar bot-avatar">
-      <img src="/static/images/logo1.png" class="bot-logo" alt="Genkit">
+      <img src="./images/logo1.png" class="bot-logo" alt="Genkit">
     </div>
     <div class="typing-indicator">
       <span></span><span></span><span></span>
@@ -191,29 +231,41 @@ function appendTypingIndicator() {
 }
 
 // ── Markdown Renderer ─────────────────────────────────────────────────────────
+// Rule: only render <ul> if 2 or more bullet/numbered items.
+// A single bullet → strip the bullet and render as plain paragraph.
 function renderMarkdown(text) {
   if (!text) return "";
 
-  let html = escapeHTML(text);
+  // ── 1. Count bullet/numbered lines BEFORE escaping ──────────────────
+  const bulletLines = (text.match(/^([-•]|\d+\.)\s+.+/gm) || []);
+  const isList = bulletLines.length >= 2;
 
-  // Bold, italic, inline code
+  // ── 2. Strip single bullets into plain text ──────────────────────────
+  let processed = text;
+  if (!isList && bulletLines.length === 1) {
+    // Remove the bullet prefix so it renders as a paragraph
+    processed = text.replace(/^([-•]|\d+\.)\s+/gm, "");
+  }
+
+  let html = escapeHTML(processed);
+
+  // ── 3. Inline formatting ─────────────────────────────────────────────
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*(.+?)\*/g,     "<em>$1</em>");
   html = html.replace(/_(.+?)_/g,       "<em>$1</em>");
   html = html.replace(/`([^`]+)`/g,     "<code>$1</code>");
 
-  // Numbered lists  (1. item)
-  html = html.replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>");
+  // ── 4. Lists (only when 2+ items) ───────────────────────────────────
+  if (isList) {
+    html = html.replace(/^\d+\.\s+(.+)$/gm, "<li>$1</li>");
+    html = html.replace(/^[-•]\s+(.+)$/gm,   "<li>$1</li>");
+    // Wrap consecutive <li> in <ul>
+    html = html.replace(/(<li>.*?<\/li>(\n|<br>)*)+/gs, m =>
+      `<ul>${m.replace(/<br>/g, "")}</ul>`
+    );
+  }
 
-  // Bullet lists  (- item or • item)
-  html = html.replace(/^[-•]\s+(.+)$/gm, "<li>$1</li>");
-
-  // Wrap consecutive <li> in <ul>
-  html = html.replace(/(<li>.*?<\/li>(\n|<br>)*)+/gs, match =>
-    `<ul>${match.replace(/<br>/g, "")}</ul>`
-  );
-
-  // Line breaks
+  // ── 5. Line breaks ───────────────────────────────────────────────────
   html = html.replace(/\n/g, "<br>");
 
   return html;
@@ -285,7 +337,7 @@ async function submitLead() {
   submitBtn.textContent = "Sending…";
 
   try {
-    const res = await fetch("/lead", {
+    const res = await fetch(`${API_BASE}/lead`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ name, email, session_id: sessionId || undefined }),
