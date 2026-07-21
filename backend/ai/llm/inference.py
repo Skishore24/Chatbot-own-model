@@ -284,18 +284,31 @@ def generate_ids(
     top_k: int = TOP_K,
     repetition_penalty: float = 1.15,
 ):
-    """
-    Generate token ids.
+    ids, _ = generate_ids_with_prob(
+        input_ids=input_ids,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        top_k=top_k,
+        repetition_penalty=repetition_penalty,
+    )
+    return ids
 
-    Returns
-    -------
-    List[int]
+@torch.no_grad()
+def generate_ids_with_prob(
+    input_ids,
+    max_new_tokens: int = 150,
+    temperature: float = TEMPERATURE,
+    top_k: int = TOP_K,
+    repetition_penalty: float = 1.15,
+):
     """
-
+    Generate token ids and track probabilities.
+    """
     if not load_model():
-        return input_ids
+        return input_ids, 0.0
 
     generated = list(input_ids)
+    probs_list = []
 
     x = torch.tensor(
         [generated],
@@ -304,77 +317,43 @@ def generate_ids(
     )
 
     for _ in range(max_new_tokens):
-
         if x.size(1) > _model.config.block_size:
             x_cond = x[:, -_model.config.block_size:]
         else:
             x_cond = x
 
         logits, _ = _model(x_cond)
-
         logits = logits[:, -1, :]
 
-        # --------------------------------------------
-        # repetition penalty
-        # --------------------------------------------
-
         if repetition_penalty > 1:
-
             unique_tokens = set(generated)
-
             for token in unique_tokens:
                 logits[0, token] /= repetition_penalty
 
-        # --------------------------------------------
-        # temperature
-        # --------------------------------------------
-
-        logits = logits / max(
-            temperature,
-            1e-6,
-        )
-
-        # --------------------------------------------
-        # top-k sampling
-        # --------------------------------------------
+        logits = logits / max(temperature, 1e-6)
 
         if top_k is not None and top_k > 0:
-
             values, _ = torch.topk(
                 logits,
                 min(top_k, logits.size(-1)),
             )
+            logits[logits < values[:, [-1]]] = -float("inf")
 
-            logits[
-                logits < values[:, [-1]]
-            ] = -float("inf")
-
-        probs = torch.softmax(
-            logits,
-            dim=-1,
-        )
-
-        next_token = torch.multinomial(
-            probs,
-            num_samples=1,
-        )
-
+        probs = torch.softmax(logits, dim=-1)
+        next_token = torch.multinomial(probs, num_samples=1)
         token_id = next_token.item()
+        
+        prob = probs[0, token_id].item()
+        probs_list.append(prob)
 
         generated.append(token_id)
-
-        x = torch.cat(
-            (
-                x,
-                next_token,
-            ),
-            dim=1,
-        )
+        x = torch.cat((x, next_token), dim=1)
 
         if token_id == _tokenizer.eos_token_id:
             break
 
-    return generated
+    avg_prob = sum(probs_list) / len(probs_list) if probs_list else 1.0
+    return generated, avg_prob
 
 
 # ============================================================
@@ -392,82 +371,44 @@ def generate_stream(
     """
     Stream generated text token-by-token.
     """
-
     if not load_model():
         yield "⚠️ Model not loaded."
         return
 
     try:
-
-        input_ids = [
-            _tokenizer.bos_token_id
-        ]
-
+        input_ids = [_tokenizer.bos_token_id]
         input_ids.extend(
-
             _tokenizer.encode(
                 prompt,
                 add_special_tokens=False,
             )
-
         )
-
-        generated = generate_ids(
-
+        generated, _ = generate_ids_with_prob(
             input_ids=input_ids,
-
             max_new_tokens=max_new_tokens,
-
             temperature=temperature,
-
             top_k=top_k,
-
             repetition_penalty=repetition_penalty,
-
         )
-
         new_tokens = generated[len(input_ids):]
 
         for token in new_tokens:
-
             if token == _tokenizer.eos_token_id:
                 break
 
-            word = _tokenizer.inverse_vocab.get(
-                token,
-                "<unk>",
-            )
-
-            if word in {
-                ".",
-                ",",
-                "!",
-                "?",
-                ":",
-                ";",
-                ")",
-                "]",
-                "}",
-            }:
-
+            word = _tokenizer.inverse_vocab.get(token, "<unk>")
+            if word in {".", ",", "!", "?", ":", ";", ")", "]", "}"}:
                 yield word
-
             elif word.startswith("'"):
-
                 yield word
-
             else:
-
                 yield " " + word
 
     except Exception:
-
-        logger.exception(
-            "Generation failed."
-        )
-
+        logger.exception("Generation failed.")
         yield "⚠️ Error while generating response."
-    # ============================================================
+
+# ============================================================
 # Full Text Generation
 # ============================================================
 
@@ -481,9 +422,7 @@ def generate(
     """
     Generate a complete response as a string.
     """
-
     output = []
-
     for token in generate_stream(
         prompt=prompt,
         max_new_tokens=max_new_tokens,
@@ -492,8 +431,53 @@ def generate(
         repetition_penalty=repetition_penalty,
     ):
         output.append(token)
-
     return "".join(output).strip()
+
+
+def generate_with_confidence(
+    prompt: str,
+    max_new_tokens: int = 150,
+    temperature: float = TEMPERATURE,
+    top_k: int = TOP_K,
+    repetition_penalty: float = 1.15,
+) -> tuple[str, float]:
+    """
+    Generate response and return average token probability.
+    """
+    if not load_model():
+        return "⚠️ Model not loaded.", 0.0
+
+    input_ids = [_tokenizer.bos_token_id]
+    input_ids.extend(
+        _tokenizer.encode(
+            prompt,
+            add_special_tokens=False,
+        )
+    )
+
+    generated, confidence = generate_ids_with_prob(
+        input_ids=input_ids,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        top_k=top_k,
+        repetition_penalty=repetition_penalty,
+    )
+
+    new_tokens = generated[len(input_ids):]
+    decoded_words = []
+    for token in new_tokens:
+        if token == _tokenizer.eos_token_id:
+            break
+        word = _tokenizer.inverse_vocab.get(token, "<unk>")
+        if word in {".", ",", "!", "?", ":", ";", ")", "]", "}"}:
+            decoded_words.append(word)
+        elif word.startswith("'"):
+            decoded_words.append(word)
+        else:
+            decoded_words.append(" " + word)
+
+    text = "".join(decoded_words).strip()
+    return text, confidence
 
 
 # ============================================================

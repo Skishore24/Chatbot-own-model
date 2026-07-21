@@ -1,0 +1,29 @@
+{
+  "industries_served": [
+    "E-Commerce & Retail",
+    "Legal & Professional Services",
+    "Health, Fitness & Organic Foods",
+    "Tech Startups & SaaS Providers",
+    "Digital Agencies & Creators"
+  ],
+  "testimonials": [
+    {
+      "client": "Marcus Vance",
+      "company": "ShopSmart Retailers",
+      "project": "ShopSmart E-Commerce Portal",
+      "feedback": "Genkit's team was highly reliable. Our new React e-commerce portal loads instantly and payment setups are fully secure. Boosted sales by 45%!"
+    },
+    {
+      "client": "Sarah Jenkins",
+      "company": "Jenkins Law Group",
+      "project": "LexiBot Legal Assistant",
+      "feedback": "The custom Python assistant built by Neha and Vikram saved our internal team hours. Now, policy lookups are automated."
+    },
+    {
+      "client": "Chef Daniel",
+      "company": "ZenBites Foods",
+      "project": "ZenBites Brand Identity",
+      "feedback": "Priya's branding guidelines and custom logos gave our brand the premium, organic feel we needed to secure gym partnerships."
+    }
+  ]
+}

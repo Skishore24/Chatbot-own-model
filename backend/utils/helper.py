@@ -15,6 +15,8 @@ Features
 • Business Lead Detection
 • Intent Detection
 • Grounding Helpers
+• Coreference Resolution
+• Rule-based Lemmatizer
 Author : Genkit AI
 """
 import re
@@ -383,21 +385,20 @@ INTENT_KEYWORDS = {
 }
 
 OUT_OF_SCOPE = {
-    "weather",
-    "cricket",
-    "football",
-    "movie",
-    "song",
-    "bitcoin",
-    "crypto",
-    "politics",
-    "president",
-    "prime minister",
-    "recipe",
-    "medicine",
-    "doctor",
-    "ipl",
-    "stock"
+    "weather", "rain", "temperature", "forecast",
+    "cricket", "football", "ipl", "fifa", "nba",
+    "movie", "film", "bollywood", "netflix",
+    "song", "music", "singer", "album",
+    "bitcoin", "crypto", "ethereum", "nft",
+    "politics", "election", "president", "prime minister",
+    "recipe", "cook", "restaurant",
+    "medicine", "doctor", "hospital",
+    "stock", "share market", "mutual fund",
+    "joke", "poem", "story",
+    "homework", "assignment", "exam",
+    "travel", "flight", "hotel",
+    "astrology", "horoscope",
+    "news", "celebrity",
 }
 
 def detect_intent(query: str):
@@ -441,6 +442,109 @@ def is_out_of_scope(text: str):
         if word in text:
             return True
     return False
+
+
+# ============================================================
+# COREFERENCE RESOLUTION
+# ============================================================
+_COREFERENCE_MAP = {
+    r"\byour services\b": "Genkit services",
+    r"\byour products\b": "Genkit products",
+    r"\byour team\b": "Genkit team",
+    r"\byour portfolio\b": "Genkit portfolio",
+    r"\byour pricing\b": "Genkit pricing",
+    r"\byour website\b": "Genkit website",
+    r"\byour work\b": "Genkit work",
+    r"\byour clients\b": "Genkit clients",
+    r"\byou offer\b": "Genkit offers",
+    r"\byou provide\b": "Genkit provides",
+    r"\byou make\b": "Genkit makes",
+    r"\byou do\b": "Genkit does",
+    r"\bdo you\b": "does Genkit",
+    r"\bcan you\b": "can Genkit",
+    r"\byour company\b": "Genkit company",
+    r"\bthe company\b": "Genkit",
+    r"\bthis company\b": "Genkit",
+    r"\bthe agency\b": "Genkit",
+    r"\bit offers\b": "Genkit offers",
+    r"\bit provides\b": "Genkit provides",
+    r"\bthey offer\b": "Genkit offers",
+    r"\bthey provide\b": "Genkit provides",
+}
+
+def resolve_coreference(text: str) -> str:
+    """
+    Replace ambiguous pronouns with Genkit references.
+    E.g. "What are your services?" → "What are Genkit services?"
+    """
+    import re as _re
+    for pattern, replacement in _COREFERENCE_MAP.items():
+        text = _re.sub(pattern, replacement, text, flags=_re.IGNORECASE)
+    return text
+
+
+# ============================================================
+# RULE-BASED LEMMATIZER
+# ============================================================
+_LEMMA_RULES = [
+    # Verbs
+    (r"(\w+)oing$", r"\1o"),
+    (r"(\w+)ies$", r"\1y"),
+    (r"(\w+)ied$", r"\1y"),
+    (r"(\w+)ying$", r"\1y"),
+    (r"(\w+)ning$", r"\1n"),
+    (r"(\w+)ing$", r"\1"),
+    (r"(\w+)ed$", r"\1"),
+    # Nouns
+    (r"(\w+)ses$", r"\1se"),
+    (r"(\w+)ves$", r"\1f"),
+    (r"(\w+)ies$", r"\1y"),
+    (r"(\w+)es$", r"\1"),
+    (r"(\w+)s$", r"\1"),
+]
+
+_LEMMA_EXCEPTIONS = {
+    "services": "service",
+    "companies": "company",
+    "technologies": "technology",
+    "capabilities": "capability",
+    "agencies": "agency",
+    "businesses": "business",
+    "websites": "website",
+    "applications": "application",
+    "running": "run",
+    "making": "make",
+    "does": "do",
+    "has": "have",
+    "was": "be",
+    "were": "be",
+    "is": "be",
+    "are": "be",
+}
+
+def lemmatize_word(word: str) -> str:
+    """
+    Rule-based lemmatizer. Returns the base form of a word.
+    No external library required.
+    """
+    import re as _re
+    w = word.lower()
+    if w in _LEMMA_EXCEPTIONS:
+        return _LEMMA_EXCEPTIONS[w]
+    for pattern, replacement in _LEMMA_RULES:
+        if _re.match(pattern, w):
+            candidate = _re.sub(pattern, replacement, w)
+            if len(candidate) >= 3:
+                return candidate
+    return w
+
+
+def lemmatize_text(text: str) -> str:
+    """
+    Lemmatize all words in a text string.
+    """
+    words = text.split()
+    return " ".join(lemmatize_word(w) for w in words)
 
 # ============================================================
 # CONTEXT BUILDER
@@ -507,7 +611,7 @@ def is_grounded(
 # ============================================================
 def format_response(
     text,
-    max_lines=6
+    max_lines=12
 ):
     if not text:
         return ""
@@ -517,7 +621,7 @@ def format_response(
         if line.strip()
     ]
     lines = lines[:max_lines]
-    return "\n".join(lines)
+    return "\n\n".join(lines)
 # ============================================================
 # EMAIL VALIDATION
 # ============================================================
@@ -636,4 +740,7 @@ __all__ = [
     "is_company_query",
     "analyze_query",
     "DEFAULT_RESPONSES",
+    "resolve_coreference",
+    "lemmatize_word",
+    "lemmatize_text",
 ]

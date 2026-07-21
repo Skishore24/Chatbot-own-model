@@ -1,0 +1,22 @@
+[
+  {
+    "question": "Why should I choose Genkit?",
+    "answer": "Genkit provides end-to-end digital solutions under one roof. Our remote model allows us to offer premium services at affordable prices, and we act as long-term partners for your business."
+  },
+  {
+    "question": "Do you develop WordPress websites?",
+    "answer": "Yes, we build and maintain WordPress sites for content creators and businesses wanting a solid CMS. However, we specialize in custom applications using React, Node.js, and Python."
+  },
+  {
+    "question": "Do you sign Non-Disclosure Agreements (NDAs)?",
+    "answer": "Yes, we sign NDAs prior to any code development or project discussion to protect your unique IP and data privacy."
+  },
+  {
+    "question": "What is Genkit's remote work setup?",
+    "answer": "We are a fully remote agency with specialists based in India. We communicate via email, Slack, and Zoom to work seamlessly with clients globally."
+  },
+  {
+    "question": "Can Genkit integrate AI models into existing portals?",
+    "answer": "Absolutely. Neha and Vikram can deploy custom chatbot backends (like FastAPI + PyTorch) and connect them to your legacy portals via API integrations."
+  }
+]

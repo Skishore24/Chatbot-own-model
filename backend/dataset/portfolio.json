@@ -1,0 +1,35 @@
+{
+  "design_philosophy": "We believe visual design should be clean, functional, and consistent. All designs incorporate user-centric micro-interactions and follow rigorous accessibility standards.",
+  "creative_assets": [
+    {
+      "category": "Brand Identity",
+      "items": [
+        "Unique logo designs in vector format (.ai, .svg)",
+        "Curated visual palettes (primary, secondary, accent HSL colors)",
+        "Type scales (Outfit, Inter, Playfair Display integrations)"
+      ]
+    },
+    {
+      "category": "Marketing Graphics",
+      "items": [
+        "Click-worthy custom YouTube thumbnails with high CTR",
+        "Instagram carousels and highlight covers",
+        "Print-ready promotional flyers and roll-up banners"
+      ]
+    },
+    {
+      "category": "Video Editing",
+      "items": [
+        "Short-form Instagram reels and YouTube shorts edits",
+        "Engaging corporate brand story videos",
+        "Kinetic animations and text subtitles overlays"
+      ]
+    }
+  ],
+  "featured_case_study": {
+    "title": "ShopSmart Brand Refresh & Web Platform",
+    "challenge": "Client had an outdated website that was slow on mobile and lacked a cohesive brand identity.",
+    "solution": "Priya designed a fresh brand style guide in Figma, sneha integrated it into React, and Amit completed site speed optimizations.",
+    "result": "Page speed score increased to 98/100, and user bounce rate decreased by 30%."
+  }
+}

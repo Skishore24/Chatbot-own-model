@@ -83,6 +83,10 @@ API_KEY = os.getenv(
     "API_KEY",
     ""
 )
+
+# ✅ Security: In production, replace "*" with specific origins e.g.:
+# ALLOWED_ORIGINS=https://yoursite.com,https://www.yoursite.com
+# Wildcard "*" allows any origin (CORS bypass risk in production).
 ALLOWED_ORIGINS = [
     origin.strip()
     for origin in
@@ -166,14 +170,14 @@ CPU_THREADS = os.cpu_count()
 # ============================================================
 # LLM CONFIGURATION
 # ============================================================
-BLOCK_SIZE = 256
+BLOCK_SIZE = 1024
 VOCAB_SIZE = 5000
-EMBED_DIM = 256
+EMBED_DIM = 384
 NUM_HEADS = 8
-NUM_LAYERS = 8
+NUM_LAYERS = 10
 DROPOUT = 0.10
-MAX_INPUT_LENGTH = 512
-MAX_OUTPUT_LENGTH = 256
+MAX_INPUT_LENGTH = 1024
+MAX_OUTPUT_LENGTH = 1024
 TEMPERATURE = float(
     os.getenv(
         "TEMPERATURE",
@@ -202,12 +206,19 @@ REPETITION_PENALTY = float(
 # TRAINING
 # ============================================================
 BATCH_SIZE = 32
-EPOCHS = 50
+EPOCHS = 60
 LEARNING_RATE = 3e-4
 WEIGHT_DECAY = 0.01
 GRADIENT_CLIP = 1.0
 WARMUP_STEPS = 500
 SAVE_EVERY = 5
+# ============================================================
+# NLP CONFIGURATION
+# ============================================================
+DOMAIN_CONFIDENCE_THRESHOLD = 0.25   # min score for in-domain
+INTENT_CONFIDENCE_THRESHOLD = 0.30   # min score for intent
+COREFERENCE_ENABLED = True           # resolve pronouns
+LEMMATIZATION_ENABLED = True         # apply lemmatization
 # ============================================================
 # RAG CONFIGURATION
 # ============================================================
@@ -363,4 +374,9 @@ __all__ = [
     "MODEL_READY",
     "PROJECT_INFO",
     "logger",
+    # NLP config
+    "DOMAIN_CONFIDENCE_THRESHOLD",
+    "INTENT_CONFIDENCE_THRESHOLD",
+    "COREFERENCE_ENABLED",
+    "LEMMATIZATION_ENABLED",
 ]

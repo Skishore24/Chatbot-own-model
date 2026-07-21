@@ -63,3 +63,8 @@ colorama>=0.4.6
 # Optional (GPU Monitoring)
 # ----------------------------
 psutil>=7.0.0
+
+# ----------------------------
+# Optional (Spell Correction)
+# ----------------------------
+pyspellchecker>=0.8.0

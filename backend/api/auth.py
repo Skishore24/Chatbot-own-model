@@ -18,9 +18,12 @@ Author : Genkit AI
 import os
 import uuid
 import secrets
+import logging
 from typing import Optional
 
 from fastapi import Header, HTTPException, status
+
+logger = logging.getLogger(__name__)
 
 # ============================================================
 # CONFIGURATION
@@ -29,6 +32,14 @@ from fastapi import Header, HTTPException, status
 API_KEY = os.getenv("API_KEY", "").strip()
 
 SESSION_LENGTH = 32
+
+# ✅ Security warning: log if running without API key protection
+if not API_KEY:
+    logger.warning(
+        "[Security] API_KEY is not set. "
+        "All endpoints are publicly accessible. "
+        "Set API_KEY in .env for production."
+    )
 
 
 # ============================================================

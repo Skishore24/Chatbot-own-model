@@ -1,12 +1,10 @@
 # ============================================================
-# Genkit AI
-# .gitignore
+# Genkit AI - Git Ignore Configuration
 # ============================================================
 
 # ============================================================
 # Python
 # ============================================================
-
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,49 +14,53 @@ __pycache__/
 # ============================================================
 # Virtual Environment
 # ============================================================
-
 venv/
 .venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 
 # ============================================================
-# Environment Variables
+# Environment Variables & Secrets
 # ============================================================
-
 .env
 .env.*
 !.env.example
 
 # ============================================================
-# Logs
+# Logs & Diagnostics
 # ============================================================
-
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # ============================================================
-# Database
+# Database Files & Dumps
 # ============================================================
-
 *.db
 *.sqlite
 *.sqlite3
-
-# ============================================================
-# MySQL Dump Files
-# ============================================================
-
 *.sql.bak
 *.dump
 
 # ============================================================
-# AI Model Files
+# Heavy AI Model Weights & Binary Checkpoints
+# (Model config.json and vocab.json ARE tracked in git)
 # ============================================================
+backend/genkit-model/*.pt
+backend/genkit-model/*.pth
+backend/genkit-model/*.ckpt
+backend/genkit-model/*.bin
+backend/genkit-model/*.joblib
+backend/genkit-model/*.pkl
+backend/genkit-model/*.onnx
+backend/genkit-model/*.safetensors
+backend/genkit-model/checkpoints/
 
-backend/genkit-model/
-backend/ml/genkit-model/
-genkit-model/
 models/
 checkpoints/
 weights/
@@ -66,20 +68,16 @@ weights/
 *.pth
 *.ckpt
 *.bin
+*.joblib
+*.pkl
+*.onnx
+*.safetensors
+*.h5
+*.keras
 
 # ============================================================
-# Dataset (Optional)
-# Keep if dataset is private.
-# Comment these lines if you want GitHub to track datasets.
+# Vector Database & Embeddings Cache
 # ============================================================
-
-# backend/dataset/
-# dataset/
-
-# ============================================================
-# Vector Database
-# ============================================================
-
 chroma_db/
 vector_store/
 embeddings/
@@ -87,91 +85,58 @@ faiss_index/
 *.faiss
 
 # ============================================================
-# Uploads
+# Temporary Files, Cache & Uploads
 # ============================================================
-
 uploads/
 temp/
 tmp/
 cache/
+.cache/
+.vite/
 
 # ============================================================
-# Build
+# Build & Distribution Artifacts
 # ============================================================
-
 dist/
 build/
+out/
 *.egg-info/
 
 # ============================================================
-# Testing
+# Testing & Coverage
 # ============================================================
-
 .pytest_cache/
 .coverage
 htmlcov/
+.coverage.*
 
 # ============================================================
-# Jupyter
+# Jupyter Notebooks
 # ============================================================
-
 .ipynb_checkpoints/
 
 # ============================================================
-# VS Code
+# IDEs & System Files
 # ============================================================
-
 .vscode/
-.history/
-
-# ============================================================
-# JetBrains
-# ============================================================
-
 .idea/
-
-# ============================================================
-# macOS
-# ============================================================
-
+.history/
 .DS_Store
-
-# ============================================================
-# Windows
-# ============================================================
-
 Thumbs.db
 Desktop.ini
-
-# ============================================================
-# Linux
-# ============================================================
-
 *~
 
 # ============================================================
-# Node (if frontend uses npm)
+# Node.js (Frontend)
 # ============================================================
-
 node_modules/
-npm-debug.log*
-yarn-error.log
 package-lock.json
 
 # ============================================================
-# Misc
+# Whitelisted Tracked Core Files
 # ============================================================
-
-*.tmp
-*.temp
-*.bak
-*.swp
-
-# ============================================================
-# Keep these important files
-# ============================================================
-
 !.gitignore
 !README.md
 !requirements.txt
+!.env.example
 !LICENSE

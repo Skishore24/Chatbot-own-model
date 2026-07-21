@@ -1,0 +1,24 @@
+{
+  "email": "genkit.tech@gmail.com",
+  "website": "https://www.genkit.in",
+  "contact_form": "Available at genkit.in/contact",
+  "channels": [
+    {
+      "type": "Email",
+      "address": "genkit.tech@gmail.com",
+      "best_for": "Project proposals, pricing quotes, and support"
+    },
+    {
+      "type": "Instagram",
+      "handle": "@genkit.in",
+      "best_for": "Browsing design portfolios and quick queries"
+    },
+    {
+      "type": "GitHub",
+      "handle": "github.com/genkit",
+      "best_for": "Open-source updates and code sharing"
+    }
+  ],
+  "response_time": "We typically reply to emails and website contact submissions within 24 business hours.",
+  "consultations": "Free 15-minute scoping consultations can be booked via our website calendar integration."
+}

@@ -1,98 +1,195 @@
-# Genkit AI Chatbot - Custom GPT Model with GPU Acceleration
+# Genkit AI Chatbot - Custom GPT Model with Hybrid RAG & React Frontend
 
-An end-to-end interactive chatbot built with a custom-trained Causal Transformer (GPT) model and a Retrieval-Augmented Generation (RAG) system using TF-IDF. The system incorporates SQLite for conversation caching, lead capturing, and feedback logging, and features a premium floating chat widget frontend.
+An end-to-end, production-grade AI Chatbot application featuring a custom-trained **PyTorch Causal Transformer (GPT)** model, an advanced **Hybrid Retrieval-Augmented Generation (RAG)** pipeline (BM25 + Vector Cosine + Knowledge Graph Expansion + Cross-Encoder Candidate Reranking), **MySQL** session & lead persistence, and a modern **React + Vite** floating chat widget.
 
 ---
 
-## 📂 Project Directory Structure
+## 🌟 Key Features
+
+- 🧠 **Custom Causal GPT Engine**: PyTorch-based Causal Transformer with multi-head self-attention, trained on domain-specific datasets with a custom Byte-Pair / WordPiece tokenizer.
+- 🔍 **Advanced Hybrid RAG System**: Multi-stage retrieval using BM25 keyword search, TF-IDF / dense vector cosine similarity, Knowledge Graph expansion, and candidate cross-encoder reranking.
+- 🛡️ **NLP & Safety Guardrails**: Built-in Domain Guard, Intent Classifier, Sentiment Analyzer, Entity Extractor, and Response Validation to prevent off-domain queries and hallucinations.
+- 💾 **Session & Memory Persistence**: MySQL connection pool handling real-time chat logging, session context, lead capture, and long-term user facts extraction.
+- 🚀 **FastAPI High-Performance Backend**: Async REST API endpoints for `/api/chat`, `/api/lead`, `/api/feedback`, `/api/health`, `/api/auth`, and `/api/model`.
+- 📊 **CLI & Evaluation Suite**: Includes `predict.py` for interactive terminal testing and `evaluate.py` for RAG precision, recall, and response score evaluation.
+- ⚛️ **Modern React + Vite Frontend**: High-performance floating chat widget featuring glassmorphism design, theme support, auto-scrolling, lead capture modal, quick suggestions, and markdown rendering.
+
+---
+
+## 📂 Production Project Structure
 
 ```text
 Chatbot-own-model/
 ├── backend/
-│   ├── genkit-model/     # Holds trained model.pt, config.json, vocab.json
-│   ├── chatbot.py        # Core generation stream and pipeline orchestration
-│   ├── config.py         # App configurations, paths, logging setup
-│   ├── database.py       # SQL schemas, connection management, session histories
-│   ├── dataset.json      # Structured QA data representing Genkit domain
-│   ├── main.py           # FastAPI entrypoint, lifespans, schemas & routes
-│   ├── ml_model.py       # Custom PyTorch GPT Architecture & simple word tokenizer
-│   ├── requirements.txt  # Project dependencies list
-│   ├── train.py          # Dataset expansion and GPU training loop
-│   ├── vector_store.py   # Custom TF-IDF Vectorizer and RAG retriever
-│   └── genkit.db         # Local SQLite database (auto-generated)
+│   ├── ai/
+│   │   ├── agents/         # Autonomous agent orchestration & task dispatchers
+│   │   ├── embeddings/     # Custom TF-IDF vector store & dataset indexer
+│   │   ├── evaluation/     # RAG & model evaluation metrics engine
+│   │   ├── llm/            # PyTorch GPT model, inference, prompt builder & trainer
+│   │   ├── memory/         # Session memory & long-term fact storage
+│   │   ├── nlp/            # Domain Guard, Intent Classifier, Entity Extractor & Validator
+│   │   ├── preprocessing/  # Text normalizers, cleaning & spell check utilities
+│   │   ├── rag/            # Hybrid retriever, Knowledge Graph, reranker & context builder
+│   │   ├── tokenizer/      # Custom Byte-Pair / WordPiece tokenizer
+│   │   └── training/       # Model training loop, loss metrics & checkpoints
+│   ├── api/                # FastAPI router (auth, chat, feedback, health, lead, model)
+│   ├── database/           # MySQL connection pool, schemas, models & persistence
+│   ├── dataset/            # Domain knowledge JSONs (services, pricing, FAQ, team, etc.)
+│   ├── genkit-model/       # Model configs, vocabulary & trainable weights
+│   ├── utils/              # Dataset generator, helper utilities & production loggers
+│   ├── chatbot.py          # Master RAG & LLM orchestration engine
+│   ├── config.py           # Application configurations & environment setup
+│   ├── evaluate.py         # Pipeline evaluation script
+│   ├── main.py             # FastAPI entrypoint server
+│   ├── predict.py          # Interactive terminal CLI chat interface
+│   ├── train.py            # Model training entrypoint script
+│   ├── .env.example        # Environment variable template
+│   └── requirements.txt    # Production Python dependencies
 │
-├── frontend/             # Interactive UI
-│   ├── images/           # Image assets (e.g. logo1.png)
-│   ├── index.html        # Floating chat widget layout
-│   ├── script.js         # Real-time event streaming and form submissions
-│   └── style.css         # Premium styling, animations, and typography
-│
-├── install_gpu.bat       # Automated Windows CUDA Setup [NEW]
-└── README.md             # Project documentation [NEW]
+└── frontend/               # React + Vite Chat Application
+    ├── public/             # Static public assets
+    ├── src/
+    │   ├── assets/         # Branding icons & vector images
+    │   ├── components/
+    │   │   └── ChatWidget/ # Modular React Chat components (Header, Input, Messages, etc.)
+    │   ├── hooks/          # Custom React hooks (useChat, useAutoGrow)
+    │   ├── services/       # Axios API client integrations
+    │   ├── utils/          # Markdown rendering & formatting helpers
+    │   ├── App.jsx         # Root application component
+    │   ├── index.css       # Design tokens, CSS variables & animations
+    │   └── main.jsx        # React application entrypoint
+    ├── index.html          # Application HTML shell
+    ├── package.json        # Node.js dependencies & scripts
+    └── vite.config.js      # Vite dev server configuration & API proxy rules
 ```
 
 ---
 
-## ⚡ Prerequisites
+## 📋 Prerequisites
 
-- **Python**: Version 3.10 to 3.14.
-- **NVIDIA GPU**: Required for GPU acceleration (e.g., GeForce RTX 3050 Laptop).
-- **GPU Drivers**: Make sure your NVIDIA drivers are up to date.
+Before running the project, ensure you have the following installed:
+
+- **Python 3.9+** (PyTorch, FastAPI, NLTK, Scikit-learn, etc.)
+- **Node.js 18+** & **npm**
+- **MySQL Server 8.0+** (Required for database persistence; can be configured in `.env`)
 
 ---
 
-## 🚀 Quick Start Guide
+## ⚡ Quick Start Guide
 
-### Step 1: Install CUDA-Enabled Dependencies
-We have provided an automated Windows script to configure your environment:
-1. Double-click the `install_gpu.bat` script at the root of the project.
-2. It will automatically upgrade `pip`, install the correct GPU-enabled PyTorch build (`torch==2.13.0+cu126`), install all other dependencies from `backend/requirements.txt`, and output a device diagnostic.
+### 1. Backend Setup
 
-> **Manual Install Command (Windows with CUDA 12.6):**
-> If you prefer running commands manually in your shell:
-> ```bash
-> pip install torch==2.13.0+cu126 --index-url https://download.pytorch.org/whl/cu126
-> pip install -r backend/requirements.txt
-> ```
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
 
-### Step 2: Train the Custom GPT Model
-Execute the training loop to parse `dataset.json`, train the custom tokenizer, and fit weights:
+2. Create and activate a virtual environment (recommended):
+   ```bash
+   # Windows
+   python -m venv venv
+   .\venv\Scripts\activate
+
+   # Linux / macOS
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   *Edit `.env` to update MySQL credentials, host, and port.*
+
+5. Launch the FastAPI backend server:
+   ```bash
+   python main.py
+   ```
+   - Server running at: `http://localhost:8000`
+   - Interactive Swagger API Docs: `http://localhost:8000/docs`
+
+---
+
+### 2. Frontend Setup
+
+1. Open a new terminal and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   - Application running at: `http://localhost:5173`
+   - Vite automatically proxies API requests (`/api/*`) to `http://localhost:8000`.
+
+---
+
+## 🛠️ CLI Predictor & Evaluation
+
+### Interactive CLI Chat
+To test the full RAG & Model pipeline directly in your terminal:
 ```bash
-python backend/train.py
+cd backend
+python predict.py
 ```
-*Note: The script automatically detects the GPU and conducts training on the device (`cuda`).*
 
-### Step 3: Run the FastAPI Server
-Start the Uvicorn production server to host the API and serve the frontend:
+### Dataset Generation & Training
+To generate synthetic training datasets and train/fine-tune the custom Causal GPT model:
 ```bash
-python backend/main.py
+cd backend
+python utils/dataset_generator.py
+python train.py
 ```
-The server will bind to `http://localhost:8000`.
 
-### Step 4: Access the Frontend
-Open `frontend/index.html` in any web browser to interact with your custom-trained AI assistant via the floating widget.
-
----
-
-## 🛠️ GPU Verification & Diagnostics
-
-To verify that your installation is correctly using the GPU, run:
+### RAG Evaluation Suite
+To run pipeline evaluation metrics across accuracy, RAG context precision, and response quality:
 ```bash
-python -c "import torch; print('GPU Available:', torch.cuda.is_available()); print('Device Name:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None')"
-```
-Expected output (if GPU installation succeeded):
-```text
-GPU Available: True
-Device Name: NVIDIA GeForce RTX 3050 Laptop GPU
+cd backend
+python evaluate.py
 ```
 
 ---
 
-## 🧬 Architectural Overview
+## ⚙️ Environment Variables
 
-*   **GPT Architecture (`backend/ml_model.py`)**: A mini-GPT architecture using Multi-Head Causal Self-Attention, Layer Normalization, GeLU activation, and dropout layers. Supports device portability (`idx.device` inference mapping).
-*   **Vector Retrieval (`backend/vector_store.py`)**: A customized sparse TF-IDF Vectorizer built with NumPy. It matches user queries to the local knowledge base segments to fetch accurate context.
-*   **SQLite Caching (`backend/database.py`)**: Tracks three relational tables with indexes for optimized lookup speeds:
-    *   `chats`: Cache histories of prompt and generation interactions.
-    *   `leads`: Captured names and email addresses.
-    *   `feedback`: Ratings (1-5 stars) logged by visitors.
+The backend uses a `.env` file (copied from `.env.example`). Key configuration parameters:
+
+| Variable | Default Value | Description |
+| :--- | :--- | :--- |
+| `DEBUG` | `True` | Enables debug logging and automatic reloads |
+| `HOST` | `0.0.0.0` | API server host address |
+| `PORT` | `8000` | API server port |
+| `MYSQL_HOST` | `localhost` | MySQL database host address |
+| `MYSQL_PORT` | `3306` | MySQL server port |
+| `MYSQL_DATABASE` | `genkit_ai` | Database name |
+| `MYSQL_USER` | `root` | Database username |
+| `MYSQL_PASSWORD` | `Admin@123` | Database password |
+
+---
+
+## 📡 API Endpoints Summary
+
+- `POST /api/chat`: Primary endpoint processing chat queries through the RAG & GPT model pipeline.
+- `POST /api/lead`: Submits contact/lead details captured from the floating widget.
+- `POST /api/feedback`: Stores user feedback (thumbs up/down) for specific response IDs.
+- `GET /api/health`: Health status endpoint returning GPU detection, system memory, and database status.
+- `GET /api/model`: Returns model details, vocabulary size, and active hyperparameters.
+
+---
+
+## 🛡️ Git & Security Policy
+
+- Sensitive credentials (`.env`), heavy model weights (`*.pt`, `checkpoint.pt`), temporary cache, and node modules (`node_modules/`) are strictly ignored via `.gitignore`.
+- Model metadata configs (`config.json` and `vocab.json`) remain version-controlled to allow instant setup.

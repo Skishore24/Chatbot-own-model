@@ -1,0 +1,15 @@
+{
+  "support_policy": {
+    "standard": "All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.",
+    "maintenance_plans": "We offer monthly maintenance plans starting at $150/month which cover minor updates, security monitoring, and regular updates."
+  },
+  "revision_policy": {
+    "details": "We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately."
+  },
+  "refund_policy": {
+    "details": "Refunds are processed depending on project stages. Up to 100% refund is possible if the research phase hasn't started. After mockup approvals, refunds are prorated to cover designer hours spent. No refunds are available once coding is finalized."
+  },
+  "data_privacy": {
+    "details": "Client code bases, database credentials, and business statistics are handled with strict privacy protocols and are never shared with third parties."
+  }
+}

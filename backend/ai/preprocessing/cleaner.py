@@ -1,243 +1,323 @@
 """
-cleaner.py
+ai/preprocessing/cleaner.py
 ----------------------------------------------------
-Genkit AI - Advanced NLP Text Cleaner
+Genkit AI - Text Cleaning Pipeline
 
 Features
 --------
-- Lowercase conversion
-- HTML removal
-- URL removal
-- Email removal
-- Phone removal
-- Emoji removal
-- Special character removal
-- Number normalization
-- Whitespace normalization
-- Repeated punctuation cleanup
-- Repeated character normalization
-- Safe text cleaning
+✓ Lowercasing
+✓ HTML tag removal
+✓ URL removal
+✓ Special character normalization
+✓ Whitespace normalization
+✓ Stopword removal (configurable)
+✓ Rule-based lemmatization
+✓ Contraction expansion
+✓ Repeated character reduction
 
 Author : Genkit AI
 """
 
 import re
-import html
-import string
-from typing import List
+import logging
+from typing import List, Set, Optional
 
+logger = logging.getLogger("Genkit AI")
+
+# ============================================================
+# CONTRACTIONS
+# ============================================================
+_CONTRACTIONS: dict = {
+    "can't": "cannot",
+    "won't": "will not",
+    "don't": "do not",
+    "doesn't": "does not",
+    "didn't": "did not",
+    "isn't": "is not",
+    "aren't": "are not",
+    "wasn't": "was not",
+    "weren't": "were not",
+    "haven't": "have not",
+    "hasn't": "has not",
+    "hadn't": "had not",
+    "wouldn't": "would not",
+    "shouldn't": "should not",
+    "couldn't": "could not",
+    "mustn't": "must not",
+    "i'm": "i am",
+    "i've": "i have",
+    "i'll": "i will",
+    "i'd": "i would",
+    "you're": "you are",
+    "you've": "you have",
+    "you'll": "you will",
+    "you'd": "you would",
+    "it's": "it is",
+    "it'll": "it will",
+    "that's": "that is",
+    "there's": "there is",
+    "they're": "they are",
+    "they've": "they have",
+    "they'll": "they will",
+    "we're": "we are",
+    "we've": "we have",
+    "we'll": "we will",
+    "what's": "what is",
+    "who's": "who is",
+    "how's": "how is",
+    "let's": "let us",
+    "genkit's": "genkit",
+}
+
+# ============================================================
+# STOPWORDS (for keyword extraction, NOT for query cleaning)
+# ============================================================
+_STOPWORDS: Set[str] = {
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "shall", "must", "can",
+    "to", "of", "for", "in", "on", "at", "by", "with", "as", "into",
+    "this", "that", "these", "those", "it", "its",
+    "and", "or", "but", "if", "so", "yet", "nor",
+    "just", "very", "really", "quite", "also",
+}
+
+# ============================================================
+# LEMMATIZATION RULES (rule-based, no external library)
+# ============================================================
+# Suffix replacement rules: (pattern, replacement)
+_LEMMA_RULES: List[tuple] = [
+    # Verb endings
+    (re.compile(r"(\w+)ing$"),      lambda m: m.group(1) if len(m.group(1)) > 3 else m.group(0)),
+    (re.compile(r"(\w+)ied$"),      lambda m: m.group(1) + "y"),
+    (re.compile(r"(\w+)ies$"),      lambda m: m.group(1) + "y"),
+    (re.compile(r"(\w+)ed$"),       lambda m: m.group(1) if len(m.group(1)) > 3 else m.group(0)),
+    # Noun plurals
+    (re.compile(r"(\w+)ves$"),      lambda m: m.group(1) + "f"),
+    (re.compile(r"(\w+)ies$"),      lambda m: m.group(1) + "y"),
+    (re.compile(r"(\w+)s$"),        lambda m: m.group(1) if len(m.group(1)) > 3 else m.group(0)),
+]
+
+# Words that should NOT be lemmatized (exception list)
+_LEMMA_EXCEPTIONS: Set[str] = {
+    "news", "series", "species", "services", "genkit", "websites",
+    "businesses", "processes", "this", "was", "is", "has", "does",
+    "pricing", "marketing", "branding", "hosting", "development",
+}
+
+# ============================================================
+# CLEANER
+# ============================================================
 
 class TextCleaner:
+    """
+    Production text cleaning pipeline for Genkit AI.
 
-    def __init__(self):
+    Usage
+    -----
+    cleaned = cleaner.clean("What services do you offer???")
+    # → "what services do you offer"
+    """
 
-        self.punctuation = string.punctuation
-
-        self.url_pattern = re.compile(
-            r"(https?://\S+|www\.\S+)",
-            re.IGNORECASE,
+    def __init__(self) -> None:
+        # Pre-compiled regex patterns
+        self._html_pattern = re.compile(r"<[^>]+>")
+        self._url_pattern = re.compile(
+            r"https?://\S+|www\.\S+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/\S*"
         )
+        self._repeated_char_pattern = re.compile(r"(.)\1{3,}")
+        self._repeated_punctuation = re.compile(r"([!?.]){2,}")
+        self._whitespace_pattern = re.compile(r"\s+")
+        self._non_alpha_pattern = re.compile(r"[^a-z0-9\s\'\-]")
 
-        self.email_pattern = re.compile(
-            r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
-        )
-
-        self.phone_pattern = re.compile(
-            r"(\+?\d[\d\s\-\(\)]{7,20})"
-        )
-
-        self.html_pattern = re.compile(
-            r"<[^>]+>"
-        )
-
-        self.space_pattern = re.compile(
-            r"\s+"
-        )
-
-        self.repeat_char_pattern = re.compile(
-            r"(.)\1{2,}"
-        )
-
-        self.repeat_punctuation_pattern = re.compile(
-            r"([!?.,])\1+"
-        )
-
-    # --------------------------------------------------
-
-    def lowercase(self, text: str) -> str:
-
-        if not text:
-            return ""
-
-        return text.lower()
-
-    # --------------------------------------------------
-
-    def remove_html(self, text: str) -> str:
-
-        text = html.unescape(text)
-
-        return self.html_pattern.sub(" ", text)
-
-    # --------------------------------------------------
-
-    def remove_urls(self, text: str) -> str:
-
-        return self.url_pattern.sub(" ", text)
-
-    # --------------------------------------------------
-
-    def remove_email(self, text: str) -> str:
-
-        return self.email_pattern.sub(" ", text)
-
-    # --------------------------------------------------
-
-    def remove_phone(self, text: str) -> str:
-
-        return self.phone_pattern.sub(" ", text)
-
-    # --------------------------------------------------
-
-    def remove_emojis(self, text: str) -> str:
-
-        return re.sub(
-            "["
-            "\U0001F600-\U0001F64F"
-            "\U0001F300-\U0001F5FF"
-            "\U0001F680-\U0001F6FF"
-            "\U0001F700-\U0001F77F"
-            "\U0001F780-\U0001F7FF"
-            "\U0001F800-\U0001F8FF"
-            "\U0001F900-\U0001F9FF"
-            "\U0001FA00-\U0001FA6F"
-            "\U0001FA70-\U0001FAFF"
-            "]+",
-            "",
-            text,
-        )
-
-    # --------------------------------------------------
-
-    def remove_special_characters(self, text: str) -> str:
-
-        return re.sub(
-            r"[^a-zA-Z0-9\s.,!?]",
-            " ",
-            text,
-        )
-
-    # --------------------------------------------------
-
-    def normalize_numbers(self, text: str) -> str:
-
-        return re.sub(
-            r"\d+",
-            lambda x: x.group(0),
-            text,
-        )
-
-    # --------------------------------------------------
-
-    def normalize_repeated_characters(self, text: str) -> str:
-
-        return self.repeat_char_pattern.sub(
-            r"\1\1",
-            text,
-        )
-
-    # --------------------------------------------------
-
-    def normalize_punctuation(self, text: str) -> str:
-
-        return self.repeat_punctuation_pattern.sub(
-            r"\1",
-            text,
-        )
-
-    # --------------------------------------------------
-
-    def remove_extra_spaces(self, text: str) -> str:
-
-        return self.space_pattern.sub(
-            " ",
-            text,
-        ).strip()
-
-    # --------------------------------------------------
-
-    def tokenize(self, text: str) -> List[str]:
-
-        return text.split()
-
-    # --------------------------------------------------
-
-    def detokenize(self, tokens: List[str]) -> str:
-
-        return " ".join(tokens)
-
-    # --------------------------------------------------
-
-    def clean(self, text: str) -> str:
-
-        if text is None:
-            return ""
-
-        text = str(text)
-
-        text = self.lowercase(text)
-
-        text = self.remove_html(text)
-
-        text = self.remove_urls(text)
-
-        text = self.remove_email(text)
-
-        text = self.remove_phone(text)
-
-        text = self.remove_emojis(text)
-
-        text = self.remove_special_characters(text)
-
-        text = self.normalize_numbers(text)
-
-        text = self.normalize_repeated_characters(text)
-
-        text = self.normalize_punctuation(text)
-
-        text = self.remove_extra_spaces(text)
-
+    # ----------------------------------------------------------
+    # Step 1: Expand contractions
+    # ----------------------------------------------------------
+    def _expand_contractions(self, text: str) -> str:
+        text = text.lower()
+        for contraction, expansion in _CONTRACTIONS.items():
+            text = text.replace(contraction, expansion)
         return text
 
-    # --------------------------------------------------
+    # ----------------------------------------------------------
+    # Step 2: Remove HTML
+    # ----------------------------------------------------------
+    def _remove_html(self, text: str) -> str:
+        return self._html_pattern.sub(" ", text)
 
-    def normalize(self, text: str) -> str:
+    # ----------------------------------------------------------
+    # Step 3: Remove URLs
+    # ----------------------------------------------------------
+    def _remove_urls(self, text: str) -> str:
+        return self._url_pattern.sub(" ", text)
 
-        return self.clean(text)
+    # ----------------------------------------------------------
+    # Step 4: Normalize repeated characters
+    # ----------------------------------------------------------
+    def _normalize_repeated(self, text: str) -> str:
+        # "soooo" → "soo", "!!!" → "!"
+        text = self._repeated_char_pattern.sub(r"\1\1", text)
+        text = self._repeated_punctuation.sub(r"\1", text)
+        return text
 
-    # --------------------------------------------------
+    # ----------------------------------------------------------
+    # Step 5: Remove special characters (keep letters, digits, spaces, apostrophes, hyphens)
+    # ----------------------------------------------------------
+    def _remove_special(self, text: str) -> str:
+        return self._non_alpha_pattern.sub(" ", text)
 
-    def clean_tokens(self, text: str):
+    # ----------------------------------------------------------
+    # Step 6: Collapse whitespace
+    # ----------------------------------------------------------
+    def _normalize_whitespace(self, text: str) -> str:
+        return self._whitespace_pattern.sub(" ", text).strip()
 
+    # ----------------------------------------------------------
+    # Main clean (keeps stopwords — for query cleaning)
+    # ----------------------------------------------------------
+    def clean(self, text: str) -> str:
+        """
+        Standard cleaning: lowercase, remove HTML/URLs/special chars.
+        Preserves stopwords (important for keeping query meaning intact).
+
+        Parameters
+        ----------
+        text : str
+
+        Returns
+        -------
+        str  Cleaned text.
+        """
+        if not text:
+            return ""
+        text = self._expand_contractions(text)
+        text = self._remove_html(text)
+        text = self._remove_urls(text)
+        text = self._normalize_repeated(text)
+        text = self._remove_special(text)
+        text = self._normalize_whitespace(text)
+        return text
+
+    # ----------------------------------------------------------
+    # Clean + remove stopwords (for keyword extraction / retrieval)
+    # ----------------------------------------------------------
+    def clean_for_retrieval(self, text: str) -> str:
+        """
+        Cleaning with stopword removal.
+        Used when building retrieval queries.
+
+        Parameters
+        ----------
+        text : str
+
+        Returns
+        -------
+        str  Cleaned text without stopwords.
+        """
         cleaned = self.clean(text)
+        words = cleaned.split()
+        filtered = [w for w in words if w not in _STOPWORDS and len(w) > 1]
+        return " ".join(filtered)
 
-        return self.tokenize(cleaned)
+    # ----------------------------------------------------------
+    # Lemmatize a single word
+    # ----------------------------------------------------------
+    def lemmatize_word(self, word: str) -> str:
+        """
+        Apply rule-based lemmatization to a single word.
 
-    # --------------------------------------------------
+        Parameters
+        ----------
+        word : str  A single lowercase word.
 
-    def sentence_length(self, text: str) -> int:
+        Returns
+        -------
+        str  Lemmatized form.
+        """
+        if word in _LEMMA_EXCEPTIONS:
+            return word
+        if len(word) <= 4:
+            return word
+        for pattern, replacement in _LEMMA_RULES:
+            match = pattern.fullmatch(word)
+            if match:
+                result = replacement(match)
+                if len(result) >= 3:
+                    return result
+        return word
 
-        return len(self.clean_tokens(text))
+    # ----------------------------------------------------------
+    # Lemmatize a sentence
+    # ----------------------------------------------------------
+    def lemmatize(self, text: str) -> str:
+        """
+        Apply lemmatization to all words in a sentence.
 
-    # --------------------------------------------------
+        Parameters
+        ----------
+        text : str
 
-    def is_empty(self, text: str) -> bool:
+        Returns
+        -------
+        str  Lemmatized text.
+        """
+        words = text.split()
+        return " ".join(self.lemmatize_word(w) for w in words)
 
-        return len(self.clean(text)) == 0
+    # ----------------------------------------------------------
+    # Full NLP pipeline (clean → remove stopwords → lemmatize)
+    # ----------------------------------------------------------
+    def full_pipeline(self, text: str) -> str:
+        """
+        Full NLP preprocessing pipeline:
+        clean → remove stopwords → lemmatize.
+
+        Used for building keyword-based retrieval queries.
+
+        Parameters
+        ----------
+        text : str
+
+        Returns
+        -------
+        str
+        """
+        cleaned = self.clean_for_retrieval(text)
+        return self.lemmatize(cleaned)
+
+    # ----------------------------------------------------------
+    # Extract keywords from text
+    # ----------------------------------------------------------
+    def extract_keywords(self, text: str, top_n: int = 8) -> List[str]:
+        """
+        Extract meaningful keywords from text.
+
+        Parameters
+        ----------
+        text  : str
+        top_n : int  Maximum keywords to return.
+
+        Returns
+        -------
+        List[str]
+        """
+        processed = self.full_pipeline(text)
+        words = processed.split()
+        # Remove very short words
+        keywords = [w for w in words if len(w) > 2]
+        # Deduplicate while preserving order
+        seen: Set[str] = set()
+        unique: List[str] = []
+        for w in keywords:
+            if w not in seen:
+                seen.add(w)
+                unique.append(w)
+        return unique[:top_n]
 
 
-# ==========================================================
-# Global Cleaner
-# ==========================================================
-
+# ============================================================
+# Singleton
+# ============================================================
 cleaner = TextCleaner()
+
+__all__ = ["TextCleaner", "cleaner"]

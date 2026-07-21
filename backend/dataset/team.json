@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Karan",
+    "role": "Founder & Chief Executive Officer (CEO)",
+    "specialty": "Project Planning & Client Relations",
+    "background": "Co-founded Genkit with school friends. Focuses on aligning technical and creative projects."
+  },
+  {
+    "name": "Priya",
+    "role": "Lead UI/UX & Graphic Designer",
+    "specialty": "Figma Wireframing & Brand Identities",
+    "background": "Shapes the visual direction, logos, and responsive web themes for our projects."
+  },
+  {
+    "name": "Vikram",
+    "role": "Lead Backend Architect",
+    "specialty": "FastAPI, Express, microservices",
+    "background": "Designs secure, scalable database structures and server APIs in Python and Node.js."
+  },
+  {
+    "name": "Sneha",
+    "role": "Frontend Developer",
+    "specialty": "React & Responsive Web Integrations",
+    "background": "Translates static Figma prototypes into interactive, pixel-perfect web pages."
+  },
+  {
+    "name": "Rohan",
+    "role": "Creative Director & Video Editor",
+    "specialty": "Adobe Premiere Pro & Social Media reels",
+    "background": "Coordinates video content edits, transitions, pacing, and kinetic titles."
+  },
+  {
+    "name": "Amit",
+    "role": "SEO Lead & Digital Marketer",
+    "specialty": "Keyword Auditing & Google Rankings",
+    "background": "Optimizes on-page metadata, site speed, and builds authority score strategies."
+  },
+  {
+    "name": "Neha",
+    "role": "AI Engineer",
+    "specialty": "PyTorch, NLP pipelines, vector indexes",
+    "background": "Builds domain-specific chatbot configurations and automated workflows."
+  },
+  {
+    "name": "Rahul",
+    "role": "Fullstack Developer",
+    "specialty": "Django, Node, React, MySQL",
+    "background": "Integrates frontends with backends and coordinates version controls on GitHub."
+  },
+  {
+    "name": "Siddharth",
+    "role": "Motion Graphics Designer",
+    "specialty": "After Effects animations & logo intros",
+    "background": "Joins Rohan to inject animated sequences and brand overlays into videos."
+  },
+  {
+    "name": "Ananya",
+    "role": "QA Analyst & Support Engineer",
+    "specialty": "Cross-device testing & updates",
+    "background": "Ensures websites compile without errors and leads client maintenance plans."
+  }
+]

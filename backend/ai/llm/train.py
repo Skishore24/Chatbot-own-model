@@ -46,8 +46,15 @@ if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 from config import (
     MODEL_DIR,
-    DATASET_PATH,
+    DATASET_DIR,
     logger,
+    BLOCK_SIZE,
+    EMBED_DIM,
+    NUM_HEADS,
+    NUM_LAYERS,
+    LEARNING_RATE,
+    BATCH_SIZE,
+    EPOCHS,
 )
 from ai.llm.ml_model import (
     GPT,
@@ -58,17 +65,14 @@ from ai.llm.ml_model import (
 # TRAINING CONFIG
 # ==========================================================
 SEED = 42
-MAX_LENGTH = 128
-BATCH_SIZE = 32
-EPOCHS = 60
-LEARNING_RATE = 3e-4
+MAX_LENGTH = BLOCK_SIZE  # Expanded context length from config
 WEIGHT_DECAY = 0.01
 GRADIENT_ACCUMULATION = 2
 VALIDATION_SPLIT = 0.10
 EARLY_STOPPING = 8
 SAVE_EVERY = 5
-NUM_WORKERS = 4
-PIN_MEMORY = True
+NUM_WORKERS = 0
+PIN_MEMORY = torch.cuda.is_available()
 USE_AMP = torch.cuda.is_available()
 # ==========================================================
 # RANDOM SEED
@@ -181,9 +185,11 @@ class ChatDataset(Dataset):
             output = str(
                 item.get("output", "")
             ).strip()
+            # Use [INST]...[/INST] structured prompt format.
+            # The model is trained on this format and will learn
+            # to generate text between [/INST] and </s>.
             prompt = (
-                f"user: {instruction}\n"
-                f"assistant:"
+                f"[INST] {instruction} [/INST]"
             )
             prompt_ids = (
                 [tokenizer.bos_token_id]
@@ -263,34 +269,87 @@ def collate_fn(batch):
 # LOAD DATASET
 # ==========================================================
 def load_dataset():
-    if not os.path.exists(DATASET_PATH):
+    file_path = DATASET_DIR / "dataset.json"
+    if not file_path.exists():
         raise FileNotFoundError(
-            f"Dataset not found:\n{DATASET_PATH}"
+            f"Dataset file not found:\n{file_path}"
         )
-    with open(
-        DATASET_PATH,
-        "r",
-        encoding="utf-8",
-    ) as f:
-        raw_data = json.load(f)
+    raw_data = []
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            file_data = json.load(f)
+            if isinstance(file_data, list):
+                for item in file_data:
+                    inst = item.get("instruction", "").strip()
+                    out = item.get("output", "").strip()
+                    intent = item.get("intent", "general")
+                    if inst and out:
+                        raw_data.append({
+                            "instruction": inst,
+                            "output": out,
+                            "intent": intent
+                        })
+    except Exception as e:
+        logger.error(f"Error loading dataset.json: {e}")
     logger.info(
-        f"Loaded {len(raw_data)} records"
+        f"Loaded {len(raw_data)} prompt records from dataset.json"
     )
-    return expand_dataset(raw_data)
+    # Shuffling directly to preserve variety in train/validation split
+    random.shuffle(raw_data)
+    return raw_data
+
+# ==========================================================
+# ML INTENT CLASSIFIER TRAINER
+# ==========================================================
+def train_intent_classifier(data):
+    """
+    Fits and serializes a scikit-learn intent classifier on the queries.
+    """
+    logger.info("=" * 60)
+    logger.info("Training ML Intent Classifier...")
+    logger.info("=" * 60)
+    
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    import joblib
+    
+    texts = []
+    labels = []
+    
+    for item in data:
+        inst = item.get("instruction", "")
+        # Parse out user query text
+        query = inst.split("Question:\n")[-1].strip()
+        texts.append(query)
+        labels.append(item.get("intent", "out_of_domain"))
+        
+    try:
+        vectorizer = TfidfVectorizer(ngram_range=(1, 2), min_df=1)
+        X = vectorizer.fit_transform(texts)
+        
+        clf = LogisticRegression(C=1.0, max_iter=300)
+        clf.fit(X, labels)
+        
+        clf_path = os.path.join(MODEL_DIR, "intent_classifier.joblib")
+        vec_path = os.path.join(MODEL_DIR, "intent_vectorizer.joblib")
+        
+        joblib.dump(clf, clf_path)
+        joblib.dump(vectorizer, vec_path)
+        
+        logger.info(f"Intent Classifier trained successfully on {len(texts)} samples.")
+        logger.info(f"Classes: {clf.classes_}")
+        logger.info("=" * 60)
+    except Exception as e:
+        logger.error(f"Failed to train intent classifier: {e}")
+
 # ==========================================================
 # TOKENIZER
 # ==========================================================
 def build_tokenizer(data):
     texts = []
     for item in data:
-        texts.append(
-            "user: "
-            + item["instruction"]
-        )
-        texts.append(
-            "assistant: "
-            + item["output"]
-        )
+        texts.append(item["instruction"])
+        texts.append(item["output"])
     tokenizer = SimpleWordTokenizer.train_on_texts(
         texts
     )
@@ -362,11 +421,12 @@ def create_dataloaders():
 def build_model(tokenizer):
     config = GPTConfig(
         vocab_size=len(tokenizer),
-        block_size=MAX_LENGTH,
-        n_embd=256,
-        n_head=8,
-        n_layer=8,
+        block_size=BLOCK_SIZE,
+        n_embd=EMBED_DIM,
+        n_head=NUM_HEADS,
+        n_layer=NUM_LAYERS,
         dropout=0.1,
+        gradient_checkpointing=True
     )
     model = GPT(config)
     model = model.to(DEVICE)
@@ -489,30 +549,50 @@ def resume_training(
     logger.info(
         "Loading previous checkpoint..."
     )
-    checkpoint = torch.load(
-        CHECKPOINT_FILE,
-        map_location=DEVICE,
-    )
-    model_state = checkpoint["model"]
-    new_model_state = {}
-    for k, v in model_state.items():
-        if k.endswith(".attn.bias"):
-            continue
-        new_key = k
-        new_key = new_key.replace(".ln_1.", ".ln1.")
-        new_key = new_key.replace(".ln_2.", ".ln2.")
-        new_key = new_key.replace(".mlp.c_fc.", ".mlp.fc.")
-        new_key = new_key.replace(".mlp.c_proj.", ".mlp.proj.")
-        new_model_state[new_key] = v
-    model.load_state_dict(new_model_state)
-    optimizer.load_state_dict(
-        checkpoint["optimizer"]
-    )
-    start_epoch = checkpoint["epoch"] + 1
-    best_loss = checkpoint["best_loss"]
-    logger.info(
-        f"Resuming from epoch {start_epoch}"
-    )
+    try:
+        checkpoint = torch.load(
+            CHECKPOINT_FILE,
+            map_location=DEVICE,
+        )
+        model_state = checkpoint["model"]
+        new_model_state = {}
+        for k, v in model_state.items():
+            if k.endswith(".attn.bias"):
+                continue
+            new_key = k
+            new_key = new_key.replace(".ln_1.", ".ln1.")
+            new_key = new_key.replace(".ln_2.", ".ln2.")
+            new_key = new_key.replace(".mlp.c_fc.", ".mlp.fc.")
+            new_key = new_key.replace(".mlp.c_proj.", ".mlp.proj.")
+            new_model_state[new_key] = v
+        
+        # Check for shape mismatch (e.g., if vocabulary size changed)
+        wte_key = "transformer.wte.weight"
+        if wte_key in new_model_state:
+            checkpoint_shape = new_model_state[wte_key].shape
+            inner_model = model.module if hasattr(model, 'module') else model
+            model_shape = inner_model.transformer.wte.weight.shape
+            if checkpoint_shape != model_shape:
+                logger.warning(
+                    f"Checkpoint vocabulary size {checkpoint_shape[0]} does not match "
+                    f"current model vocabulary size {model_shape[0]} (dataset expanded). "
+                    "Starting training from scratch."
+                )
+                return start_epoch, best_loss
+
+        model.load_state_dict(new_model_state)
+        optimizer.load_state_dict(
+            checkpoint["optimizer"]
+        )
+        start_epoch = checkpoint["epoch"] + 1
+        best_loss = checkpoint["best_loss"]
+        logger.info(
+            f"Resuming from epoch {start_epoch}"
+        )
+    except Exception as e:
+        logger.warning(
+            f"Failed to load checkpoint: {e}. Starting training from scratch."
+        )
     return (
         start_epoch,
         best_loss,
@@ -591,10 +671,41 @@ def train_one_epoch(
 # ==========================================================
 # VALIDATION
 # ==========================================================
+def compute_bleu(ref: str, cand: str) -> float:
+    r_words = ref.lower().split()
+    c_words = cand.lower().split()
+    if not r_words or not c_words:
+        return 0.0
+    overlap = set(r_words) & set(c_words)
+    return len(overlap) / len(set(c_words))
+
+def compute_rouge(ref: str, cand: str) -> float:
+    r_words = ref.lower().split()
+    c_words = cand.lower().split()
+    if not r_words or not c_words:
+        return 0.0
+    overlap = set(r_words) & set(c_words)
+    return len(overlap) / len(r_words)
+
+def simple_decode(ids, tokenizer) -> str:
+    words = []
+    for tid in ids:
+        val = tid.item() if hasattr(tid, "item") else tid
+        if val in {tokenizer.bos_token_id, tokenizer.eos_token_id}:
+            continue
+        word = tokenizer.inverse_vocab.get(val, "")
+        if word:
+            if word in {".", ",", "!", "?", ":", ";", ")", "]", "}"}:
+                words.append(word)
+            else:
+                words.append(" " + word)
+    return "".join(words).strip()
+
 @torch.no_grad()
 def validate(
     model,
     valid_loader,
+    tokenizer=None,
 ):
     model.eval()
     total_loss = 0.0
@@ -613,6 +724,66 @@ def validate(
                 targets=labels,
             )
         total_loss += loss.item()
+    
+    # Compute BLEU & ROUGE on 10 random validation samples for logging
+    bleu_scores = []
+    rouge_scores = []
+    
+    if tokenizer is not None:
+        samples_evaluated = 0
+        for batch in valid_loader:
+            if samples_evaluated >= 10:
+                break
+            input_ids_batch = batch["input_ids"]
+            labels_batch = batch["labels"]
+            for i in range(len(input_ids_batch)):
+                if samples_evaluated >= 10:
+                    break
+                input_ids = input_ids_batch[i]
+                labels = labels_batch[i]
+                
+                # Extract prompt and target
+                prompt_ids = []
+                target_ids = []
+                for tid, lid in zip(input_ids, labels):
+                    if lid.item() == -100:
+                        prompt_ids.append(tid.item())
+                    else:
+                        target_ids.append(tid.item())
+                
+                target_str = simple_decode(target_ids, tokenizer)
+                if not target_str:
+                    continue
+                
+                # Greedy text generation
+                gen_ids = []
+                x = torch.tensor([prompt_ids], dtype=torch.long, device=DEVICE)
+                for _ in range(80):
+                    if x.size(1) > model.config.block_size:
+                        x_cond = x[:, -model.config.block_size:]
+                    else:
+                        x_cond = x
+                    logits, _ = model(x_cond)
+                    logits = logits[:, -1, :]
+                    next_token = torch.argmax(logits, dim=-1, keepdim=True)
+                    token_id = next_token.item()
+                    if token_id == tokenizer.eos_token_id:
+                        break
+                    gen_ids.append(token_id)
+                    x = torch.cat((x, next_token), dim=1)
+                
+                gen_str = simple_decode(gen_ids, tokenizer)
+                
+                bleu_scores.append(compute_bleu(target_str, gen_str))
+                rouge_scores.append(compute_rouge(target_str, gen_str))
+                samples_evaluated += 1
+                
+        avg_bleu = sum(bleu_scores) / len(bleu_scores) if bleu_scores else 0.0
+        avg_rouge = sum(rouge_scores) / len(rouge_scores) if rouge_scores else 0.0
+        logger.info(
+            f"Validation Metrics - BLEU-1: {avg_bleu:.4f} | ROUGE-1: {avg_rouge:.4f}"
+        )
+        
     return total_loss / len(valid_loader)
 # ==========================================================
 # TRAIN MODEL
@@ -626,6 +797,11 @@ def train_model():
     tokenizer, train_loader, valid_loader = (
         create_dataloaders()
     )
+    
+    # Train Intent Classifier
+    raw_data = load_dataset()
+    train_intent_classifier(raw_data)
+
     model, config = build_model(
         tokenizer
     )
@@ -670,6 +846,7 @@ def train_model():
         valid_loss = validate(
             model,
             valid_loader,
+            tokenizer=tokenizer,
         )
         elapsed = (
             time.time() - start
@@ -782,6 +959,11 @@ def run_training():
     logger.info("GENKIT AI CUSTOM GPT TRAINER")
     logger.info("=" * 70)
     tokenizer, train_loader, valid_loader = create_dataloaders()
+    
+    # Train Intent Classifier
+    raw_data = load_dataset()
+    train_intent_classifier(raw_data)
+
     model, config = build_model(tokenizer)
     optimizer = build_optimizer(model)
     total_steps = (
@@ -813,6 +995,7 @@ def run_training():
         valid_loss = validate(
             model,
             valid_loader,
+            tokenizer=tokenizer,
         )
         logger.info(
             f"Train Loss : {train_loss:.6f}"

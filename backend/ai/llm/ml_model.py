@@ -59,6 +59,8 @@ class GPTConfig:
 
     flash_attention: bool = True
 
+    gradient_checkpointing: bool = False
+
 
 # ============================================================
 # Utility Functions
@@ -598,9 +600,14 @@ class GPT(nn.Module):
         # Transformer Blocks
         # ----------------------------------------------------
 
-        for block in self.transformer["h"]:
+        use_checkpointing = getattr(self.config, "gradient_checkpointing", False) and self.training
 
-            x = block(x)
+        for block in self.transformer["h"]:
+            if use_checkpointing:
+                # Use reentrant=False checkpoint API for standard compatibility
+                x = torch.utils.checkpoint.checkpoint(block, x, use_reentrant=False)
+            else:
+                x = block(x)
 
         # ----------------------------------------------------
         # Final LayerNorm

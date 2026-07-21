@@ -1,0 +1,16 @@
+[
+  {
+    "project_name": "E-Commerce",
+    "service": "Website Development",
+    "description": "A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.",
+    "technology": ["React", "Node.js", "MySQL", "HTML","CSS"],
+    "impact": "Boosted online sales by 45% and reduced page load times under 1.5 seconds."
+  },
+  {
+    "project_name": "LexiBot Legal Assistant",
+    "service": "AI & Chatbot Development",
+    "description": "An intelligent internal AI bot that retrieves regulatory clauses and answers complex policy questions.",
+    "technology": ["Python", "FastAPI", "PyTorch", "MySQL"],
+    "impact": "Saved legal team 12 hours per week in document lookup and research."
+  }
+]

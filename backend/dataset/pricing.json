@@ -1,0 +1,62 @@
+{
+  "currency": "USD",
+  "packages": [
+    {
+      "name": "Landing Page Package",
+      "starting_price": 500,
+      "features": [
+        "1 Custom Page",
+        "Responsive Mobile Layout",
+        "Basic SEO Optimization",
+        "Contact Form Integration",
+        "7 Days Post-Delivery Support"
+      ],
+      "timeline": "5 to 10 business days"
+    },
+    {
+      "name": "Business Website Package",
+      "starting_price": 1500,
+      "features": [
+        "Up to 5 Pages",
+        "Custom UI/UX Theme",
+        "Blog or CMS Setup",
+        "Google Analytics Setup",
+        "30 Days Post-Delivery Support"
+      ],
+      "timeline": "3 to 4 weeks"
+    },
+    {
+      "name": "E-Commerce Package",
+      "starting_price": 3000,
+      "features": [
+        "Unlimited Product Listings",
+        "Shopping Cart & Checkout Flow",
+        "Secure Stripe/PayPal Integration",
+        "Inventory Dashboard Setup",
+        "60 Days Post-Delivery Support"
+      ],
+      "timeline": "4 to 6 weeks"
+    },
+    {
+      "name": "Custom AI Agent Package",
+      "starting_price": 4500,
+      "features": [
+        "Custom LLM Pipeline Development",
+        "RAG Document Search Engine",
+        "FastAPI Backend REST Integration",
+        "MySQL Session Database Integration",
+        "90 Days Dedicated Technical Support"
+      ],
+      "timeline": "6 to 8 weeks"
+    }
+  ],
+  "hourly_rates": {
+    "website_development": 45,
+    "ui_ux_design": 35,
+    "branding": 40,
+    "video_editing": 30,
+    "seo": 35,
+    "ai_development": 65
+  },
+  "flexible_budget": "For unique or complex project requirements, Genkit provides a customized quotation based on scope analysis. Free consultation calls can be booked at genkit.in."
+}

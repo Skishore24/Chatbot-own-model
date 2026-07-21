@@ -1,0 +1,44 @@
+[
+  {
+    "service_name": "Website Development",
+    "description": "Custom websites, web applications, landing pages, and responsive portals built using modern, fast frameworks.",
+    "technologies": ["Python", "FastAPI", "Django", "Node.js", "Express", "React", "HTML5", "CSS3", "JavaScript"],
+    "benefits": ["Mobile responsive design", "SEO optimized structure", "Fast page speeds", "Secure and scalable architecture"],
+    "turnaround": "3 to 6 weeks depending on complexity"
+  },
+  {
+    "service_name": "Graphic Design",
+    "description": "High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners.",
+    "technologies": ["Adobe Photoshop", "Adobe Illustrator", "Figma"],
+    "benefits": ["Unique visual elements", "Brand alignment", "Source files included", "Multi-format exports"],
+    "turnaround": "3 to 7 business days"
+  },
+  {
+    "service_name": "Branding & Visual Identity",
+    "description": "Complete brand creation including custom logos, color palettes, typography rules, and style guides.",
+    "technologies": ["Figma", "Adobe Illustrator"],
+    "benefits": ["Memorable logos", "Cohesive brand guidelines", "Professional business card designs", "Consistent customer touchpoints"],
+    "turnaround": "1 to 2 weeks"
+  },
+  {
+    "service_name": "Video Editing",
+    "description": "Professional video post-production for YouTube content, marketing ads, social media reels, and short clips.",
+    "technologies": ["Adobe Premiere Pro", "Adobe After Effects"],
+    "benefits": ["Dynamic transitions", "Color grading & corrections", "Audio leveling & royalty-free music", "Professional subtitles/captions"],
+    "turnaround": "2 to 5 days per video"
+  },
+  {
+    "service_name": "Search Engine Optimization (SEO)",
+    "description": "Search engine marketing and optimization to drive organic traffic, improve Google search rankings, and fix technical bugs.",
+    "technologies": ["Google Search Console", "Google Analytics", "Keyword Planner"],
+    "benefits": ["Higher rankings on Google", "Targeted keyword optimization", "In-depth traffic reports", "Speed & mobile usability fixes"],
+    "turnaround": "Ongoing support (monthly retainers)"
+  },
+  {
+    "service_name": "AI & Chatbot Development",
+    "description": "Development of intelligent AI agents, custom chatbots, and automated workflows using LLM architectures.",
+    "technologies": ["Python", "PyTorch", "scikit-learn", "FastAPI", "MySQL"],
+    "benefits": ["24/7 automated support", "Domain-specific knowledge retrieval", "Reduced customer service load", "Seamless API integrations"],
+    "turnaround": "4 to 8 weeks"
+  }
+]

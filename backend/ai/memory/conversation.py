@@ -24,7 +24,7 @@ import uuid
 from datetime import datetime
 from dataclasses import dataclass, field
 from collections import OrderedDict
-from threading import Lock
+from threading import Lock, RLock
 from typing import Dict, List, Optional
 
 
@@ -63,87 +63,84 @@ class ConversationMessage:
 # ==========================================================
 
 class ConversationSession:
-
     """
-    Stores conversation of one user session.
+    Stores conversation of one user session along with profiles and summaries.
     """
 
     def __init__(self, session_id: str):
-
         self.session_id = session_id
-
         self.created_at = time.time()
-
         self.updated_at = self.created_at
-
         self.messages: List[ConversationMessage] = []
+        self.user_profile = {"name": "", "email": "", "interests": []}
+        self.long_term_memory = []
+        self.context_summary = ""
 
     # ------------------------------------------------------
 
     def touch(self):
-
         self.updated_at = time.time()
 
     # ------------------------------------------------------
 
     def add_message(
-
         self,
-
         role: str,
-
         content: str,
-
     ):
-
         msg = ConversationMessage(
-
             role=role,
-
             content=content,
-
         )
-
         self.messages.append(msg)
+        self.touch()
 
+    # ------------------------------------------------------
+
+    def update_profile(self, info: dict):
+        for k, v in info.items():
+            if k == "interests" and isinstance(v, list):
+                # Merge lists
+                self.user_profile["interests"] = list(set(self.user_profile["interests"] + v))
+            else:
+                self.user_profile[k] = v
+        self.touch()
+
+    def add_long_term_fact(self, fact: str):
+        if fact not in self.long_term_memory:
+            self.long_term_memory.append(fact)
+        self.touch()
+
+    def set_summary(self, summary: str):
+        self.context_summary = summary
         self.touch()
 
     # ------------------------------------------------------
 
     def last_message(self):
-
         if not self.messages:
-
             return None
-
         return self.messages[-1]
 
     # ------------------------------------------------------
 
     def total_messages(self):
-
         return len(self.messages)
 
     # ------------------------------------------------------
 
     def to_dict(self):
-
         return {
-
             "session_id": self.session_id,
-
             "created_at": self.created_at,
-
             "updated_at": self.updated_at,
-
+            "user_profile": self.user_profile,
+            "long_term_memory": self.long_term_memory,
+            "context_summary": self.context_summary,
             "messages": [
-
                 m.to_dict()
-
                 for m in self.messages
-
             ],
-
         }
 
 
@@ -181,7 +178,7 @@ class ConversationMemory:
 
         self.sessions: Dict[str, ConversationSession] = OrderedDict()
 
-        self.lock = Lock()
+        self.lock = RLock()
 
     # ------------------------------------------------------
 
@@ -330,24 +327,7 @@ class ConversationMemory:
                     session_id
                 ].touch()
 
-    # ------------------------------------------------------
-    # Delete Session
-    # ------------------------------------------------------
 
-    def delete_session(
-        self,
-        session_id: str,
-    ):
-
-        with self.lock:
-
-            if session_id in self.sessions:
-
-                del self.sessions[
-                    session_id
-                ]
-
-    # ------------------------------------------------------
     # Session Exists
     # ------------------------------------------------------
 
@@ -657,6 +637,36 @@ class ConversationMemory:
             "max_messages_per_session": self.max_messages,
 
         }
+
+    def get_profile(self, session_id: str) -> dict:
+        with self.lock:
+            session = self.get_session(session_id)
+            return session.user_profile
+
+    def update_profile(self, session_id: str, info: dict):
+        with self.lock:
+            session = self.get_session(session_id)
+            session.update_profile(info)
+
+    def add_long_term_fact(self, session_id: str, fact: str):
+        with self.lock:
+            session = self.get_session(session_id)
+            session.add_long_term_fact(fact)
+
+    def get_long_term_memory(self, session_id: str) -> List[str]:
+        with self.lock:
+            session = self.get_session(session_id)
+            return session.long_term_memory
+
+    def get_context_summary(self, session_id: str) -> str:
+        with self.lock:
+            session = self.get_session(session_id)
+            return session.context_summary
+
+    def set_context_summary(self, session_id: str, summary: str):
+        with self.lock:
+            session = self.get_session(session_id)
+            session.set_summary(summary)
 
     # ------------------------------------------------------
     # Reset Everything

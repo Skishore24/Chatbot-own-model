@@ -112,10 +112,17 @@ async def lifespan(app: FastAPI):
     log_startup()
     logger.info("=" * 70)
     yield
+    # ── Shutdown ──────────────────────────────────────────────────────────────
     logger.info("=" * 70)
     logger.info(
         "Stopping Genkit AI..."
     )
+    try:
+        from database import close_pool
+        close_pool()
+        logger.info("Database pool closed.")
+    except Exception:
+        pass
     log_shutdown()
     logger.info("=" * 70)
 # ============================================================
@@ -292,21 +299,6 @@ def validate_startup():
     logger.info("=" * 70)
 
 validate_startup()
-
-# ============================================================
-# SHUTDOWN EVENT
-# ============================================================
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("=" * 70)
-    logger.info("Stopping Genkit AI")
-    logger.info("=" * 70)
-    try:
-        from database import close_pool
-        close_pool()
-        logger.info("Database pool closed.")
-    except Exception:
-        pass
 
 # ============================================================
 # MAIN

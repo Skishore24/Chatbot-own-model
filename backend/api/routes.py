@@ -53,10 +53,11 @@ sys.path.insert(
 from config import (
     FRONTEND_DIR,
     DEVICE,
+    MODEL_READY,
     logger,
 )
 
-from chatbot import get_answer
+from chatbot import get_answer, chatbot_health
 
 from database import (
     save_chat_to_db,
@@ -273,9 +274,11 @@ async def chat(req: ChatRequest):
 
             "X-Session-ID": session_id,
 
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
 
-            "Connection": "keep-alive"
+            "Connection": "keep-alive",
+
+            "X-Accel-Buffering": "no",
 
         }
 
@@ -526,3 +529,120 @@ def clear_session(session_id: str):
 
         )
 
+
+# ============================================================
+# MODEL INFO
+# ============================================================
+
+@router.get(
+    "/model/info",
+    tags=["Model"],
+    dependencies=[Depends(verify_api_key)]
+)
+def model_info():
+    """
+    Return model status, parameters, and device info.
+    """
+    import os
+    from config import (
+        MODEL_DIR, MODEL_FILE, VOCAB_FILE, CONFIG_FILE,
+        DEVICE, USE_GPU, GPU_NAME, GPU_MEMORY, MODEL_READY,
+        VOCAB_SIZE, EMBED_DIM, NUM_HEADS, NUM_LAYERS,
+        BLOCK_SIZE, MAX_OUTPUT_LENGTH,
+    )
+    model_size_mb = 0
+    if MODEL_FILE.exists():
+        model_size_mb = round(MODEL_FILE.stat().st_size / 1024**2, 2)
+
+    return {
+        "model_ready": MODEL_READY,
+        "model_file": str(MODEL_FILE),
+        "model_size_mb": model_size_mb,
+        "device": DEVICE,
+        "gpu": USE_GPU,
+        "gpu_name": GPU_NAME if USE_GPU else None,
+        "gpu_memory_gb": GPU_MEMORY if USE_GPU else None,
+        "architecture": {
+            "vocab_size": VOCAB_SIZE,
+            "embed_dim": EMBED_DIM,
+            "num_heads": NUM_HEADS,
+            "num_layers": NUM_LAYERS,
+            "block_size": BLOCK_SIZE,
+            "max_output_length": MAX_OUTPUT_LENGTH,
+        },
+        "pipeline": chatbot_health(),
+    }
+
+
+# ============================================================
+# MODEL RELOAD
+# ============================================================
+
+@router.post(
+    "/model/reload",
+    tags=["Model"],
+    dependencies=[Depends(verify_api_key)]
+)
+def model_reload():
+    """
+    Reload the model weights from disk without restarting server.
+    Useful after retraining.
+    """
+    try:
+        from ai.llm.inference import reload_model
+        reload_model()
+        logger.info("[Admin] Model reloaded.")
+        return {"success": True, "message": "Model reloaded successfully."}
+    except AttributeError:
+        return {
+            "success": False,
+            "message": "reload_model() not implemented in inference.py. Restart the server instead."
+        }
+    except Exception as e:
+        logger.exception("Model reload failed.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+# ============================================================
+# PIPELINE TEST
+# ============================================================
+
+class PipelineTestRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=500)
+
+
+@router.post(
+    "/pipeline/test",
+    tags=["Debug"],
+    dependencies=[Depends(verify_api_key)]
+)
+def pipeline_test(req: PipelineTestRequest):
+    """
+    Test individual pipeline steps without full LLM generation.
+    Useful for debugging domain guard, intent, and entities.
+    """
+    from ai.nlp.domain_guard import domain_guard
+    from ai.nlp.intent_classifier import intent_classifier
+    from ai.nlp.entity_extractor import entity_extractor
+    from utils.helper import resolve_coreference, is_valid_query
+    from ai.preprocessing.cleaner import cleaner
+    from ai.preprocessing.spell import spell_checker
+
+    text = req.text
+    cleaned = cleaner.clean(text)
+    coref = resolve_coreference(cleaned)
+    corrected = spell_checker.correct(coref)
+
+    return {
+        "original": text,
+        "cleaned": cleaned,
+        "coreference_resolved": coref,
+        "spell_corrected": corrected,
+        "valid": is_valid_query(corrected),
+        "domain": domain_guard.classify(corrected),
+        "intent": intent_classifier.classify(corrected),
+        "entities": entity_extractor.extract(corrected),
+    }

@@ -1,0 +1,74 @@
+{
+  "backend": [
+    {
+      "name": "Python",
+      "description": "Primary language for AI pipelines, scraping scripts, and web services using FastAPI/Django."
+    },
+    {
+      "name": "FastAPI",
+      "description": "Used for building modern, high-performance, and asynchronous APIs."
+    },
+    {
+      "name": "Django",
+      "description": "Utilized for complex, database-heavy web applications with robust admin interfaces."
+    },
+    {
+      "name": "Node.js",
+      "description": "Powers real-time messaging applications and server-side APIs using Express."
+    },
+    {
+      "name": "Java",
+      "description": "Deploys enterprise-grade microservices and secure transaction systems."
+    }
+  ],
+  "frontend": [
+    {
+      "name": "React",
+      "description": "Creates highly interactive, component-based single-page user interfaces."
+    },
+    {
+      "name": "HTML5 & CSS3",
+      "description": "Structural and styling foundations for all responsive, modern layouts."
+    },
+    {
+      "name": "JavaScript",
+      "description": "Provides scripting logic and DOM manipulations across client browsers."
+    }
+  ],
+  "databases": [
+    {
+      "name": "MySQL",
+      "description": "Reliable relational database for transactional consistency and structured tables."
+    },
+    {
+      "name": "MongoDB",
+      "description": "NoSQL document storage for flexible, schema-less configurations and dynamic payloads."
+    },
+    {
+      "name": "PostgreSQL",
+      "description": "Advanced open-source database with robust JSON querying and geometric data support."
+    }
+  ],
+  "creative_tools": [
+    {
+      "name": "Figma",
+      "description": "Standard software for vector wireframing, UI design, and interactive prototypes."
+    },
+    {
+      "name": "Adobe Photoshop",
+      "description": "Used for graphic edits, image compositions, and social media flyers."
+    },
+    {
+      "name": "Adobe Illustrator",
+      "description": "Deploys scalable vector graphics, brand logos, business cards, and typography layouts."
+    },
+    {
+      "name": "Adobe Premiere Pro",
+      "description": "Primary toolkit for timeline video edits, audio mixing, and multi-track logs."
+    },
+    {
+      "name": "Adobe After Effects",
+      "description": "Powers complex kinetic typography, motion graphics, transitions, and logo animations."
+    }
+  ]
+}
