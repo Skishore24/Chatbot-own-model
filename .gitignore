@@ -139,4 +139,7 @@ package-lock.json
 !README.md
 !requirements.txt
 !.env.example
+!backend/.env.example
 !LICENSE
+.gemini/
+.agents/

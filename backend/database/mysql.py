@@ -48,6 +48,35 @@ from config import (
 )
 
 # ============================================================
+# DATABASE CREATION BOOTSTRAP
+# ============================================================
+
+def ensure_database_exists():
+    """
+    Connect to MySQL server directly without specifying a database name,
+    and create target database if it does not exist yet.
+    """
+    try:
+        conn = mysql.connector.connect(
+            host=MYSQL_HOST,
+            port=MYSQL_PORT,
+            user=MYSQL_USER,
+            password=MYSQL_PASSWORD,
+            autocommit=True,
+        )
+        cursor = conn.cursor()
+        cursor.execute(
+            f"CREATE DATABASE IF NOT EXISTS `{MYSQL_DATABASE}` "
+            f"CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+        )
+        cursor.close()
+        conn.close()
+        logger.info(f"Verified/Created MySQL database: {MYSQL_DATABASE}")
+    except Exception as e:
+        logger.exception(f"Failed to verify or create MySQL database '{MYSQL_DATABASE}'")
+        raise
+
+# ============================================================
 # CONNECTION POOL
 # ============================================================
 
@@ -67,6 +96,8 @@ def initialize_pool():
 
     if _POOL is not None:
         return
+
+    ensure_database_exists()
 
     try:
 
