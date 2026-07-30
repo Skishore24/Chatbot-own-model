@@ -1,15 +1,17 @@
 """
-backend/train.py
+scripts/train.py
 ----------------------------------------------------
-GENKIT AI v5.0 Enterprise Model Training Launcher
-Delegates execution to app.ai.llm.train.
+GENKIT AI v5.0 Master Training CLI Script
+Usage:
+    python scripts/train.py
 """
 
 import sys
 from pathlib import Path
 
-# Ensure backend directory is in sys.path
-BACKEND_DIR = Path(__file__).resolve().parent
+# Add backend directory to sys.path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
@@ -23,10 +25,9 @@ from torch.utils.data import DataLoader
 
 def main():
     logger.info("=" * 70)
-    logger.info(f"GENKIT AI v5.0 — CUSTOM GPT TRAINER")
+    logger.info("GENKIT AI v5.0 — MASTER MODEL TRAINER CLI")
     logger.info("=" * 70)
 
-    # Initialize Model Config & Architecture
     config = GPTConfig(
         vocab_size=settings.VOCAB_SIZE,
         block_size=settings.BLOCK_SIZE,
@@ -38,8 +39,6 @@ def main():
     model = EnterpriseGPTModel(config)
     trainer = ModelTrainer(model, default_tokenizer)
 
-    logger.info("Training pipeline ready. Running training epoch loops...")
-    # Sample synthetic dataset for demonstration training loop
     sample_text = "Genkit AI provides enterprise AI and web development services."
     encoded = default_tokenizer.encode(sample_text)
     dataset = TextDataset([encoded], block_size=settings.BLOCK_SIZE)

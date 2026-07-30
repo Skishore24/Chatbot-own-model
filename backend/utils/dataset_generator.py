@@ -20,8 +20,10 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from config import DATASET_DIR, logger
-from ai.llm.prompt_builder import SYSTEM_INSTRUCTION
+from app.core.config import settings
+from app.core.logger import logger
+DATASET_DIR = settings.DATASET_DIR
+SYSTEM_INSTRUCTION = "You are Genkit AI, an enterprise AI assistant for Genkit.in."
 
 # Helper to format the training instruction as prompt context
 def format_training_instruction(query: str, intent: str, entities_str: str, context_text: str) -> str:

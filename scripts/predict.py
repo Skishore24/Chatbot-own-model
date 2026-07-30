@@ -1,15 +1,18 @@
 """
-backend/predict.py
+scripts/predict.py
 ----------------------------------------------------
-GENKIT AI v5.0 Enterprise Interactive CLI Predictor
+GENKIT AI v5.0 Interactive CLI Predictor
+Usage:
+    python scripts/predict.py
 """
 
 import sys
 import uuid
 from pathlib import Path
 
-# Ensure backend directory is in sys.path
-BACKEND_DIR = Path(__file__).resolve().parent
+# Add backend directory to sys.path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BACKEND_DIR = ROOT_DIR / "backend"
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
@@ -22,7 +25,6 @@ from app.ai.llm.inference import GenerationEngine
 from app.ai.llm.prompt_builder import prompt_builder
 from app.ai.rag.retriever import HybridRetriever
 
-# Initialize Engine
 gpt_config = GPTConfig(vocab_size=16000, block_size=2048, n_embd=384, n_head=8, n_kv_head=2, n_layer=8)
 gpt_model = EnterpriseGPTModel(gpt_config)
 gen_engine = GenerationEngine(gpt_model, default_tokenizer)
@@ -50,13 +52,11 @@ def main():
                 print("Goodbye!")
                 break
 
-            # Security Scan
             cleaned, is_safe = security_service.sanitize_input(query)
             if not is_safe or security_service.scan_prompt_injection(cleaned):
                 print("Genkit AI > Security alert: Input rejected due to security policy.")
                 continue
 
-            # Retrieval & Generation
             context_blocks, _ = retriever.retrieve(cleaned)
             prompt = prompt_builder.build_prompt(cleaned, context_passages=context_blocks)
 

@@ -1,69 +1,46 @@
 # ============================================================
-# Genkit AI - Git Ignore Configuration
+# GENKIT AI v5.0 Enterprise — Master Git Ignore Rules
 # ============================================================
 
 # ============================================================
-# Python
+# Python & PyTorch Artifacts
 # ============================================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyo
 *.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+.coverage.*
+*.egg-info/
+.ipynb_checkpoints/
 
 # ============================================================
-# Virtual Environment
+# Virtual Environments
 # ============================================================
 venv/
 .venv/
 env/
 ENV/
-env.bak/
-venv.bak/
+backend/venv/
+backend/.venv/
 
 # ============================================================
 # Environment Variables & Secrets
 # ============================================================
 .env
 .env.*
+backend/.env
+frontend/.env
 !.env.example
+!backend/.env.example
 
 # ============================================================
-# Logs & Diagnostics
+# Model Checkpoints & Large Weights (.pt, .bin, .safetensors)
+# (Vocab and config JSON files are tracked)
 # ============================================================
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# ============================================================
-# Database Files & Dumps
-# ============================================================
-*.db
-*.sqlite
-*.sqlite3
-*.sql.bak
-*.dump
-
-# ============================================================
-# Heavy AI Model Weights & Binary Checkpoints
-# (Model config.json and vocab.json ARE tracked in git)
-# ============================================================
-backend/genkit-model/*.pt
-backend/genkit-model/*.pth
-backend/genkit-model/*.ckpt
-backend/genkit-model/*.bin
-backend/genkit-model/*.joblib
-backend/genkit-model/*.pkl
-backend/genkit-model/*.onnx
-backend/genkit-model/*.safetensors
-backend/genkit-model/checkpoints/
-
-models/
-checkpoints/
-weights/
 *.pt
 *.pth
 *.ckpt
@@ -74,49 +51,58 @@ weights/
 *.safetensors
 *.h5
 *.keras
+backend/checkpoints/*.pt
+backend/checkpoints/*.pth
+backend/checkpoints/*.bin
+backend/checkpoints/*.safetensors
+checkpoints/
 
 # ============================================================
-# Vector Database & Embeddings Cache
+# Logs, Caches & Diagnostics
 # ============================================================
-chroma_db/
-vector_store/
-embeddings/
-faiss_index/
-*.faiss
+logs/
+backend/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # ============================================================
-# Temporary Files, Cache & Uploads
+# Cache, Temp & User Uploads
 # ============================================================
-uploads/
-temp/
-tmp/
 cache/
 .cache/
-.vite/
+backend/cache/
+temp/
+tmp/
+backend/temp/
+uploads/
+backend/uploads/
 
 # ============================================================
-# Build & Distribution Artifacts
+# Node.js & Frontend Artifacts
 # ============================================================
+node_modules/
+frontend/node_modules/
 dist/
+frontend/dist/
 build/
-out/
-*.egg-info/
+frontend/build/
+.vite/
+frontend/.vite/
 
 # ============================================================
-# Testing & Coverage
+# Databases & Dumps
 # ============================================================
-.pytest_cache/
-.coverage
-htmlcov/
-.coverage.*
+*.db
+*.sqlite
+*.sqlite3
+*.sql.bak
+*.dump
 
 # ============================================================
-# Jupyter Notebooks
-# ============================================================
-.ipynb_checkpoints/
-
-# ============================================================
-# IDEs & System Files
+# IDEs, OS & System Files
 # ============================================================
 .vscode/
 .idea/
@@ -125,21 +111,13 @@ htmlcov/
 Thumbs.db
 Desktop.ini
 *~
+.gemini/
+.agents/
 
 # ============================================================
-# Node.js (Frontend)
-# ============================================================
-node_modules/
-package-lock.json
-
-# ============================================================
-# Whitelisted Tracked Core Files
+# Tracked Configuration Whitelist
 # ============================================================
 !.gitignore
 !README.md
-!requirements.txt
 !.env.example
 !backend/.env.example
-!LICENSE
-.gemini/
-.agents/
