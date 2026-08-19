@@ -159,4 +159,31 @@ class SecurityService:
             return None
 
 
+    def __init__(self):
+        self._rate_limits: Dict[str, List[float]] = {}
+
+    def check_rate_limit(self, client_ip: str, limit_per_minute: Optional[int] = None) -> bool:
+        """
+        Sliding-window per-IP rate limiter.
+        Returns True if request is allowed, False if rate limit exceeded.
+        """
+        import time
+        limit = limit_per_minute or settings.RATE_LIMIT_PER_MINUTE
+        now = time.time()
+        window_start = now - 60.0
+
+        if client_ip not in self._rate_limits:
+            self._rate_limits[client_ip] = []
+
+        # Retain only timestamps within the last 60 seconds
+        self._rate_limits[client_ip] = [t for t in self._rate_limits[client_ip] if t > window_start]
+
+        if len(self._rate_limits[client_ip]) >= limit:
+            logger.warning(f"Rate limit exceeded for IP: {client_ip} ({len(self._rate_limits[client_ip])}/{limit} req/min)")
+            return False
+
+        self._rate_limits[client_ip].append(now)
+        return True
+
+
 security_service = SecurityService()

@@ -1,26 +1,26 @@
 // ======================================================
-// Genkit AI API Service
+// Genkit AI API Service v5.0
 // ======================================================
 
-// If using Vite proxy, keep this empty.
-// For production you can change it:
-// const API_BASE = "https://your-domain.com";
 const API_BASE = "";
-
 
 // ------------------------------------------------------
 // Session
 // ------------------------------------------------------
 
 export function getSessionId() {
-  return localStorage.getItem("genkit_session");
+  let session = localStorage.getItem("genkit_session");
+  if (!session) {
+    session = "session_" + Math.random().toString(36).substring(2, 12);
+    localStorage.setItem("genkit_session", session);
+  }
+  return session;
 }
 
 export function saveSessionId(id) {
   if (!id) return;
   localStorage.setItem("genkit_session", id);
 }
-
 
 // ------------------------------------------------------
 // Chat Streaming API
@@ -33,19 +33,19 @@ export async function sendChatMessage(
   onError
 ) {
   try {
-    const response = await fetch(`${API_BASE}/chat`, {
+    const sessionId = getSessionId();
+    const response = await fetch(`${API_BASE}/api/v5/chat/stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        q: message,
-        session_id: getSessionId() || undefined
+        message: message,
+        session_id: sessionId
       })
     });
 
     if (!response.ok) {
-      // Try to extract the server error message
       let errorDetail = "Failed to connect to server.";
       try {
         const errBody = await response.json();
@@ -54,32 +54,53 @@ export async function sendChatMessage(
       throw new Error(errorDetail);
     }
 
-    // ✅ Fix: correct header name is X-Session-ID (capital ID)
-    // Backend sends: "X-Session-ID" in StreamingResponse headers
-    const session = response.headers.get("X-Session-ID");
-
+    const session = response.headers.get("X-Session-ID") || sessionId;
     if (session) {
       saveSessionId(session);
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
+    const decoder = new TextDecoder("utf-8");
     let fullResponse = "";
+    let sseBuffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
-
       if (done) break;
 
-      const chunk = decoder.decode(value, {
-        stream: true
-      });
+      const chunkText = decoder.decode(value, { stream: true });
+      sseBuffer += chunkText;
 
-      fullResponse += chunk;
+      // Check if response is SSE (data: {...}) or raw text
+      if (sseBuffer.includes("data: ")) {
+        const lines = sseBuffer.split("\n\n");
+        sseBuffer = lines.pop() || "";
 
-      if (onChunk) {
-        onChunk(fullResponse);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const payload = JSON.parse(trimmed.replace(/^data:\s*/, ""));
+              if (payload.event === "token" && payload.chunk) {
+                fullResponse += payload.chunk;
+                if (onChunk) onChunk(fullResponse);
+              } else if (payload.event === "end") {
+                if (payload.session_id) saveSessionId(payload.session_id);
+              }
+            } catch (_) {
+              // Raw chunk fallback
+              const raw = trimmed.replace(/^data:\s*/, "");
+              if (raw && !raw.startsWith("{")) {
+                fullResponse += raw;
+                if (onChunk) onChunk(fullResponse);
+              }
+            }
+          }
+        }
+      } else {
+        // Raw stream fallback
+        fullResponse += chunkText;
+        if (onChunk) onChunk(fullResponse);
       }
     }
 
@@ -90,41 +111,28 @@ export async function sendChatMessage(
     return fullResponse;
 
   } catch (error) {
-
     console.error("[Genkit API Error]", error);
-
     if (onError) {
       onError(error.message || "Connection error.");
     }
-
     throw error;
   }
 }
-
-
 
 // ------------------------------------------------------
 // Lead API
 // ------------------------------------------------------
 
 export async function submitLead(data) {
-
-  const response = await fetch(`${API_BASE}/lead`, {
-
+  const response = await fetch(`${API_BASE}/api/v5/lead`, {
     method: "POST",
-
     headers: {
       "Content-Type": "application/json"
     },
-
     body: JSON.stringify({
-
       ...data,
-
       session_id: getSessionId() || undefined
-
     })
-
   });
 
   if (!response.ok) {
@@ -137,27 +145,17 @@ export async function submitLead(data) {
   }
 
   return await response.json();
-
 }
-
-
 
 // ------------------------------------------------------
 // Health Check
 // ------------------------------------------------------
 
 export async function checkServer() {
-
   try {
-
     const response = await fetch(`${API_BASE}/health`);
-
     return response.ok;
-
   } catch {
-
     return false;
-
   }
-
 }

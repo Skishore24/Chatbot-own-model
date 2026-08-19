@@ -57,7 +57,7 @@ async def add_telemetry_headers(request: Request, call_next):
     return response
 
 
-# Include Router
+# Include API Router under /api/v5
 app.include_router(api_router)
 
 
@@ -68,7 +68,14 @@ async def root():
         "version": settings.APP_VERSION,
         "status": "operational",
         "docs": "/docs",
+        "api_v5": "/api/v5",
     }
+
+
+@app.get("/health")
+async def root_health():
+    from app.api.routes import health_check
+    return await health_check()
 
 
 if __name__ == "__main__":

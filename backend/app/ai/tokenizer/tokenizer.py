@@ -306,5 +306,9 @@ class ByteFallbackBPETokenizer:
         return tok
 
 
-# Global Default Tokenizer Instance
-default_tokenizer = ByteFallbackBPETokenizer()
+# Global Default Tokenizer Instance (auto-loads trained tokenizer if available)
+default_tokenizer = (
+    ByteFallbackBPETokenizer.load()
+    if (settings.MODEL_DIR / "bpe_tokenizer_v5.json").exists()
+    else ByteFallbackBPETokenizer()
+)

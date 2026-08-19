@@ -9,7 +9,11 @@ import os
 from pathlib import Path
 from typing import List, Optional
 from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
+try:
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+except ImportError:
+    from pydantic import BaseSettings
+    SettingsConfigDict = dict
 
 
 class AppSettings(BaseSettings):
@@ -31,11 +35,32 @@ class AppSettings(BaseSettings):
 
     @property
     def DATASET_DIR(self) -> Path:
-        return self.BASE_DIR / "dataset"
+        datasets_path = self.BASE_DIR / "datasets"
+        if datasets_path.exists() and any(datasets_path.glob("*.json")):
+            return datasets_path
+        dataset_path = self.BASE_DIR / "dataset"
+        return dataset_path if dataset_path.exists() else datasets_path
+
+    @property
+    def DATASET_DIRS(self) -> List[Path]:
+        dirs = []
+        for name in ("datasets", "dataset"):
+            p = self.BASE_DIR / name
+            if p.exists():
+                dirs.append(p)
+        return dirs or [self.BASE_DIR / "datasets"]
 
     @property
     def MODEL_DIR(self) -> Path:
         return self.BASE_DIR / "genkit-model"
+
+    @property
+    def MODEL_CHECKPOINT_PATH(self) -> Path:
+        return self.MODEL_DIR / "model_v5.pt"
+
+    @property
+    def TOKENIZER_CHECKPOINT_PATH(self) -> Path:
+        return self.MODEL_DIR / "bpe_tokenizer_v5.json"
 
     @property
     def UPLOAD_DIR(self) -> Path:
@@ -116,6 +141,12 @@ class AppSettings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    def model_checkpoint_exists(self) -> bool:
+        return self.MODEL_CHECKPOINT_PATH.exists()
+
+    def tokenizer_checkpoint_exists(self) -> bool:
+        return self.TOKENIZER_CHECKPOINT_PATH.exists()
 
     def init_directories(self) -> None:
         """Ensures all required operational directories exist."""

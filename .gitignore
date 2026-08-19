@@ -34,12 +34,13 @@ backend/.venv/
 .env.*
 backend/.env
 frontend/.env
+!*.env.example
 !.env.example
 !backend/.env.example
 
 # ============================================================
-# Model Checkpoints & Large Weights (.pt, .bin, .safetensors)
-# (Vocab and config JSON files are tracked)
+# Model Checkpoints & Large Binary Weights (.pt, .pth, .bin)
+# Note: Tokenizer and vocabulary JSON files remain tracked
 # ============================================================
 *.pt
 *.pth
@@ -51,6 +52,8 @@ frontend/.env
 *.safetensors
 *.h5
 *.keras
+backend/genkit-model/*.pt
+backend/genkit-model/*.pth
 backend/checkpoints/*.pt
 backend/checkpoints/*.pth
 backend/checkpoints/*.bin
@@ -93,7 +96,7 @@ frontend/build/
 frontend/.vite/
 
 # ============================================================
-# Databases & Dumps
+# Databases & Local Dumps
 # ============================================================
 *.db
 *.sqlite
@@ -102,7 +105,7 @@ frontend/.vite/
 *.dump
 
 # ============================================================
-# IDEs, OS & System Files
+# IDEs, OS & Tool Artifacts
 # ============================================================
 .vscode/
 .idea/
@@ -115,9 +118,8 @@ Desktop.ini
 .agents/
 
 # ============================================================
-# Tracked Configuration Whitelist
+# Whitelist Tracked Checkpoints & Configurations
 # ============================================================
 !.gitignore
 !README.md
-!.env.example
-!backend/.env.example
+!backend/genkit-model/bpe_tokenizer_v5.json

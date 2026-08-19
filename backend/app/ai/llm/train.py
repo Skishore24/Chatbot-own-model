@@ -103,7 +103,14 @@ class ModelTrainer:
             betas=(0.9, 0.95),
         )
 
-        self.scaler = torch.cuda.amp.GradScaler(enabled=settings.USE_AMP and self.device.type == "cuda")
+        self.is_cuda = self.device.type == "cuda" and torch.cuda.is_available()
+        self.use_amp = settings.USE_AMP and self.is_cuda
+
+        if self.is_cuda and self.use_amp:
+            self.scaler = torch.amp.GradScaler("cuda")
+        else:
+            self.scaler = None
+
         self.criterion = nn.CrossEntropyLoss(ignore_index=self.tokenizer.encoder.get("<pad>", 0))
 
     def train_epoch(self, dataloader: DataLoader, scheduler: CosineWarmupScheduler, epoch: int) -> float:
@@ -116,28 +123,43 @@ class ModelTrainer:
         for step, (x, y) in enumerate(dataloader):
             x, y = x.to(self.device), y.to(self.device)
 
-            with torch.cuda.amp.autocast(enabled=settings.USE_AMP and self.device.type == "cuda", dtype=torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16):
+            if self.use_amp and self.is_cuda:
+                dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                with torch.amp.autocast("cuda", dtype=dtype):
+                    logits, _ = self.model(x)
+                    loss = self.criterion(logits.view(-1, logits.size(-1)), y.view(-1))
+                    loss = loss / settings.GRADIENT_ACCUMULATION_STEPS
+                self.scaler.scale(loss).backward()
+            else:
                 logits, _ = self.model(x)
                 loss = self.criterion(logits.view(-1, logits.size(-1)), y.view(-1))
                 loss = loss / settings.GRADIENT_ACCUMULATION_STEPS
+                loss.backward()
 
-            self.scaler.scale(loss).backward()
+            if (step + 1) % settings.GRADIENT_ACCUMULATION_STEPS == 0 or (step + 1) == len(dataloader):
+                if self.use_amp and self.scaler is not None:
+                    self.scaler.unscale_(self.optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), settings.GRADIENT_CLIP)
+                    self.scaler.step(self.optimizer)
+                    self.scaler.update()
+                else:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), settings.GRADIENT_CLIP)
+                    self.optimizer.step()
 
-            if (step + 1) % settings.GRADIENT_ACCUMULATION_STEPS == 0:
-                self.scaler.unscale_(self.optimizer)
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), settings.GRADIENT_CLIP)
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
                 self.optimizer.zero_grad()
                 curr_lr = scheduler.step()
 
             total_loss += loss.item() * settings.GRADIENT_ACCUMULATION_STEPS
 
-            if (step + 1) % 50 == 0:
+            if (step + 1) % 50 == 0 or (step + 1) == len(dataloader):
                 elapsed = time.time() - start_time
-                logger.info(f"Epoch [{epoch}] Step [{step+1}/{len(dataloader)}] Loss: {loss.item()*settings.GRADIENT_ACCUMULATION_STEPS:.4f} LR: {self.optimizer.param_groups[0]['lr']:.6f} Time: {elapsed:.2f}s")
+                logger.info(
+                    f"Epoch [{epoch}] Step [{step+1}/{len(dataloader)}] "
+                    f"Loss: {loss.item()*settings.GRADIENT_ACCUMULATION_STEPS:.4f} "
+                    f"LR: {self.optimizer.param_groups[0]['lr']:.6f} Time: {elapsed:.2f}s"
+                )
 
-        avg_loss = total_loss / len(dataloader)
+        avg_loss = total_loss / max(len(dataloader), 1)
         perplexity = math.exp(min(avg_loss, 20.0))
         logger.info(f"Epoch [{epoch}] Finished. Avg Loss: {avg_loss:.4f} | Perplexity: {perplexity:.2f}")
         return avg_loss

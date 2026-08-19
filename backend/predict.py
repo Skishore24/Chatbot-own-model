@@ -16,16 +16,14 @@ if str(BACKEND_DIR) not in sys.path:
 from app.core.config import settings
 from app.core.logger import logger
 from app.core.security import security_service
-from app.ai.tokenizer.tokenizer import default_tokenizer
-from app.ai.llm.ml_model import EnterpriseGPTModel, GPTConfig
+from app.ai.llm.model_loader import get_model_and_tokenizer
 from app.ai.llm.inference import GenerationEngine
 from app.ai.llm.prompt_builder import prompt_builder
 from app.ai.rag.retriever import HybridRetriever
 
 # Initialize Engine
-gpt_config = GPTConfig(vocab_size=16000, block_size=2048, n_embd=384, n_head=8, n_kv_head=2, n_layer=8)
-gpt_model = EnterpriseGPTModel(gpt_config)
-gen_engine = GenerationEngine(gpt_model, default_tokenizer)
+gpt_model, tokenizer, gpt_config = get_model_and_tokenizer()
+gen_engine = GenerationEngine(gpt_model, tokenizer)
 retriever = HybridRetriever()
 
 
