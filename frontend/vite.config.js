@@ -19,12 +19,12 @@ export default defineConfig({
       "/model": { target: "http://127.0.0.1:8000", changeOrigin: true },
       "/session": { target: "http://127.0.0.1:8000", changeOrigin: true },
       "/history": { target: "http://127.0.0.1:8000", changeOrigin: true },
-      "/pipeline": { target: "http://127.0.0.1:8000", changeOrigin: true }
-    }
+      "/pipeline": { target: "http://127.0.0.1:8000", changeOrigin: true },
+    },
   },
 
   build: {
     outDir: "dist",
-    sourcemap: false
-  }
+    sourcemap: false,
+  },
 });

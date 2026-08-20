@@ -5,10 +5,10 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    gcc \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+  build-essential \
+  gcc \
+  curl \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 COPY backend/requirements.txt .

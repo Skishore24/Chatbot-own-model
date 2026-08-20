@@ -23,7 +23,6 @@ export default function useAutoGrow(ref, value) {
 
     textarea.style.height = "auto";
 
-    textarea.style.height =
-      Math.min(textarea.scrollHeight, 120) + "px";
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
   }, [value, ref]);
 }

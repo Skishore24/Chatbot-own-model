@@ -9,9 +9,7 @@ import LeadForm from "./LeadForm";
 import useChat from "../../hooks/useChat";
 
 export default function ChatWidget() {
-
   const {
-
     // Chat
 
     messages,
@@ -49,108 +47,59 @@ export default function ChatWidget() {
 
     // Keyboard
 
-    handleKeyDown
-
+    handleKeyDown,
   } = useChat();
 
   return (
-
     <>
-
       {/* Floating Button */}
 
-      <FloatingButton
-
-        isOpen={isOpen}
-
-        toggleChat={toggleChat}
-
-      />
+      <FloatingButton isOpen={isOpen} toggleChat={toggleChat} />
 
       {/* Widget */}
 
       <div
-
         className={`chat-container ${isOpen ? "active" : ""}`}
-
         role="dialog"
-
         aria-modal="true"
-
         aria-label="Genkit AI Chat"
-
       >
-
         {/* Header */}
 
-        <ChatHeader
-
-          toggleChat={toggleChat}
-
-        />
+        <ChatHeader toggleChat={toggleChat} />
 
         {/* Messages — LeadForm lives inside the scrollable messages area */}
 
         <ChatMessages
-
           ref={messagesRef}
-
           messages={messages}
-
           typing={typing}
-
           showLeadForm={showLeadForm}
-
           leadData={leadData}
-
           updateLead={updateLead}
-
           submitLeadForm={submitLeadForm}
-
           closeLeadForm={closeLeadForm}
-
           sendingLead={sendingLead}
-
           leadError={leadError}
-
         />
 
         {/* Suggestions — only show when not streaming */}
 
         {!typing && !isStreaming && (
-
-          <Suggestions
-
-            suggestions={suggestions}
-
-            onSelect={handleSuggestion}
-
-          />
-
+          <Suggestions suggestions={suggestions} onSelect={handleSuggestion} />
         )}
 
         {/* Input */}
 
         <ChatInput
-
           value={input}
-
           onChange={setInput}
-
           onSend={sendMessage}
-
           onKeyDown={handleKeyDown}
-
           textareaRef={textareaRef}
-
           disabled={typing || isStreaming}
-
         />
-
       </div>
-
     </>
-
   );
-
 }

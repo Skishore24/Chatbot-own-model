@@ -1,9 +1,6 @@
 import React from "react";
 
-export default function FloatingButton({
-  isOpen,
-  toggleChat
-}) {
+export default function FloatingButton({ isOpen, toggleChat }) {
   return (
     <button
       className="chat-toggle"
@@ -17,9 +14,7 @@ export default function FloatingButton({
       </span>
 
       {/* Badge only shown when chat is closed */}
-      {!isOpen && (
-        <span className="badge" aria-hidden="true"></span>
-      )}
+      {!isOpen && <span className="badge" aria-hidden="true"></span>}
     </button>
   );
 }

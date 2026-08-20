@@ -26,23 +26,18 @@ export function saveSessionId(id) {
 // Chat Streaming API
 // ------------------------------------------------------
 
-export async function sendChatMessage(
-  message,
-  onChunk,
-  onComplete,
-  onError
-) {
+export async function sendChatMessage(message, onChunk, onComplete, onError) {
   try {
     const sessionId = getSessionId();
     const response = await fetch(`${API_BASE}/api/v5/chat/stream`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         message: message,
-        session_id: sessionId
-      })
+        session_id: sessionId,
+      }),
     });
 
     if (!response.ok) {
@@ -50,7 +45,9 @@ export async function sendChatMessage(
       try {
         const errBody = await response.json();
         if (errBody?.detail) errorDetail = errBody.detail;
-      } catch (_) { /* ignore */ }
+      } catch (_) {
+        /* ignore */
+      }
       throw new Error(errorDetail);
     }
 
@@ -109,7 +106,6 @@ export async function sendChatMessage(
     }
 
     return fullResponse;
-
   } catch (error) {
     console.error("[Genkit API Error]", error);
     if (onError) {
@@ -127,12 +123,12 @@ export async function submitLead(data) {
   const response = await fetch(`${API_BASE}/api/v5/lead`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       ...data,
-      session_id: getSessionId() || undefined
-    })
+      session_id: getSessionId() || undefined,
+    }),
   });
 
   if (!response.ok) {
@@ -140,7 +136,9 @@ export async function submitLead(data) {
     try {
       const errBody = await response.json();
       if (errBody?.detail) errorDetail = errBody.detail;
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     throw new Error(errorDetail);
   }
 

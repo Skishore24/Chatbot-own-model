@@ -13,11 +13,16 @@ export function useChatStream() {
       id: "welcome",
       role: "assistant",
       text: "Hello! I am Genkit AI Assistant. How can I help you with Genkit's AI, web development, or cloud services today?",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      timestamp: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     },
   ]);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [sessionId] = useState(() => "session_" + Math.random().toString(36).substring(2, 10));
+  const [sessionId] = useState(
+    () => "session_" + Math.random().toString(36).substring(2, 10),
+  );
 
   const sendMessage = useCallback(
     async (userQuery) => {
@@ -27,7 +32,10 @@ export function useChatStream() {
         id: "msg_" + Date.now(),
         role: "user",
         text: userQuery,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
       const assistantMsgId = "asst_" + Date.now();
@@ -35,7 +43,10 @@ export function useChatStream() {
         id: assistantMsgId,
         role: "assistant",
         text: "",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       };
 
       setMessages((prev) => [...prev, userMsg, initialAssistantMsg]);
@@ -50,8 +61,8 @@ export function useChatStream() {
             prev.map((msg) =>
               msg.id === assistantMsgId
                 ? { ...msg, text: msg.text + chunk }
-                : msg
-            )
+                : msg,
+            ),
           );
         },
         onEnd: () => {
@@ -62,14 +73,17 @@ export function useChatStream() {
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMsgId
-                ? { ...msg, text: "I apologize, an error occurred while processing your request. Please try again." }
-                : msg
-            )
+                ? {
+                    ...msg,
+                    text: "I apologize, an error occurred while processing your request. Please try again.",
+                  }
+                : msg,
+            ),
           );
         },
       });
     },
-    [isStreaming, sessionId]
+    [isStreaming, sessionId],
   );
 
   const clearHistory = useCallback(() => {
@@ -78,7 +92,10 @@ export function useChatStream() {
         id: "welcome",
         role: "assistant",
         text: "History cleared. How else can I assist you today?",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
       },
     ]);
   }, []);

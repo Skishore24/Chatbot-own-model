@@ -1,22 +1,18 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
-import {
-  sendChatMessage,
-  submitLead
-} from "../services/api";
+import { sendChatMessage, submitLead } from "../services/api";
 
 import {
   DEFAULT_SUGGESTIONS,
   WELCOME_MESSAGE,
   getCurrentTime,
   generateId,
-  isValidEmail
+  isValidEmail,
 } from "../utils/helpers";
 
 import { renderMarkdown } from "../utils/markdown";
 
 export default function useChat() {
-
   // ======================================================
   // Chat State
   // ======================================================
@@ -36,11 +32,9 @@ export default function useChat() {
   const [leadError, setLeadError] = useState("");
 
   const [leadData, setLeadData] = useState({
-
     name: "",
 
-    email: ""
-
+    email: "",
   });
 
   // ======================================================
@@ -65,9 +59,7 @@ export default function useChat() {
   // ======================================================
 
   function toggleChat() {
-
-    setIsOpen(prev => !prev);
-
+    setIsOpen((prev) => !prev);
   }
 
   // ======================================================
@@ -75,9 +67,7 @@ export default function useChat() {
   // ======================================================
 
   useEffect(() => {
-
     const welcome = {
-
       id: generateId(),
 
       sender: "bot",
@@ -86,12 +76,10 @@ export default function useChat() {
 
       text: WELCOME_MESSAGE,
 
-      time: getCurrentTime()
-
+      time: getCurrentTime(),
     };
 
     setMessages([welcome]);
-
   }, []);
 
   // ======================================================
@@ -99,15 +87,11 @@ export default function useChat() {
   // ======================================================
 
   useEffect(() => {
-
     const timer = setTimeout(() => {
-
       setIsOpen(true);
-
     }, 500);
 
     return () => clearTimeout(timer);
-
   }, []);
 
   // ======================================================
@@ -115,12 +99,9 @@ export default function useChat() {
   // ======================================================
 
   useEffect(() => {
-
     if (!messagesRef.current) return;
 
-    messagesRef.current.scrollTop =
-      messagesRef.current.scrollHeight;
-
+    messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }, [messages, typing]);
 
   // ======================================================
@@ -129,14 +110,12 @@ export default function useChat() {
   // ======================================================
 
   function handleSuggestion(text) {
-
     // Set input and immediately send
     setInput(text);
 
     // Use a short timeout so React can flush the input state
     // before sendMessage() reads it (or pass text directly)
     sendMessage(text);
-
   }
 
   // ======================================================
@@ -144,15 +123,11 @@ export default function useChat() {
   // ======================================================
 
   function updateLead(field, value) {
-
-    setLeadData(prev => ({
-
+    setLeadData((prev) => ({
       ...prev,
 
-      [field]: value
-
+      [field]: value,
     }));
-
   }
 
   // ======================================================
@@ -160,270 +135,231 @@ export default function useChat() {
   // ✅ Fix: isTyping guard + proper typing/placeholder logic
   // ======================================================
 
-  const sendMessage = useCallback(async (customMessage = null) => {
+  const sendMessage = useCallback(
+    async (customMessage = null) => {
+      // ✅ Guard: prevent double-send while streaming
+      if (isStreamingRef.current) return;
 
-    // ✅ Guard: prevent double-send while streaming
-    if (isStreamingRef.current) return;
+      const text = (customMessage ?? input).trim();
 
-    const text = (customMessage ?? input).trim();
+      if (!text) return;
 
-    if (!text) return;
+      // ✅ Max length guard (matches backend max_length=1000)
+      if (text.length > 1000) return;
 
-    // ✅ Max length guard (matches backend max_length=1000)
-    if (text.length > 1000) return;
+      // Set streaming guard immediately
+      isStreamingRef.current = true;
 
-    // Set streaming guard immediately
-    isStreamingRef.current = true;
+      // -------------------------------
+      // User Message
+      // -------------------------------
 
-    // -------------------------------
-    // User Message
-    // -------------------------------
+      const userMessage = {
+        id: generateId(),
 
-    const userMessage = {
-
-      id: generateId(),
-
-      sender: "user",
-
-      text,
-
-      html: text,
-
-      time: getCurrentTime()
-
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-
-    setInput("");
-
-    // ✅ Fix: show typing indicator (not a placeholder bot message)
-    // The placeholder bot message approach caused dual-render bugs.
-    // We use the typing state for the TypingIndicator component,
-    // and only add the real bot message once we have content.
-    setTyping(true);
-
-    const botId = generateId();
-    let botMessageAdded = false;
-
-    try {
-
-      await sendChatMessage(
+        sender: "user",
 
         text,
 
-        // ===================================
-        // Streaming Callback — first chunk
-        // creates the bot message, subsequent
-        // chunks update it in-place
-        // ===================================
+        html: text,
 
-        (chunk) => {
+        time: getCurrentTime(),
+      };
 
-          if (!botMessageAdded) {
-            // First chunk: add bot message and hide typing indicator
-            botMessageAdded = true;
+      setMessages((prev) => [...prev, userMessage]);
+
+      setInput("");
+
+      // ✅ Fix: show typing indicator (not a placeholder bot message)
+      // The placeholder bot message approach caused dual-render bugs.
+      // We use the typing state for the TypingIndicator component,
+      // and only add the real bot message once we have content.
+      setTyping(true);
+
+      const botId = generateId();
+      let botMessageAdded = false;
+
+      try {
+        await sendChatMessage(
+          text,
+
+          // ===================================
+          // Streaming Callback — first chunk
+          // creates the bot message, subsequent
+          // chunks update it in-place
+          // ===================================
+
+          (chunk) => {
+            if (!botMessageAdded) {
+              // First chunk: add bot message and hide typing indicator
+              botMessageAdded = true;
+              setTyping(false);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: botId,
+                  sender: "bot",
+                  text: chunk,
+                  html: renderMarkdown(chunk),
+                  time: getCurrentTime(),
+                },
+              ]);
+            } else {
+              // Subsequent chunks: update existing bot message
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === botId
+                    ? {
+                        ...msg,
+
+                        text: chunk,
+
+                        html: renderMarkdown(chunk),
+                      }
+                    : msg,
+                ),
+              );
+            }
+          },
+
+          // ===================================
+          // Completed
+          // ===================================
+
+          (finalText) => {
             setTyping(false);
-            setMessages(prev => [
-              ...prev,
-              {
-                id: botId,
-                sender: "bot",
-                text: chunk,
-                html: renderMarkdown(chunk),
-                time: getCurrentTime()
-              }
-            ]);
-          } else {
-            // Subsequent chunks: update existing bot message
-            setMessages(prev =>
-              prev.map(msg =>
 
-                msg.id === botId
+            if (!botMessageAdded) {
+              // Edge case: stream completed with no chunks (e.g., empty response)
+              botMessageAdded = true;
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: botId,
+                  sender: "bot",
+                  text: finalText || "I couldn't find an answer to that.",
+                  html: renderMarkdown(
+                    finalText || "I couldn't find an answer to that.",
+                  ),
+                  time: getCurrentTime(),
+                },
+              ]);
+            } else {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === botId
+                    ? {
+                        ...msg,
 
-                  ? {
+                        text: finalText,
 
-                      ...msg,
+                        html: renderMarkdown(finalText),
+                      }
+                    : msg,
+                ),
+              );
+            }
 
-                      text: chunk,
+            // -------------------------------
+            // Show Lead Form
+            // ✅ Expanded trigger conditions
+            // -------------------------------
 
-                      html: renderMarkdown(chunk)
+            if (
+              finalText.includes("👉") ||
+              finalText.toLowerCase().includes("free quote") ||
+              finalText.toLowerCase().includes("get in touch") ||
+              finalText.toLowerCase().includes("contact us")
+            ) {
+              setShowLeadForm(true);
+            }
+          },
 
-                    }
+          // ===================================
+          // Error
+          // ===================================
 
-                  : msg
+          (error) => {
+            setTyping(false);
 
-              )
-            );
-          }
+            const errorText =
+              "⚠️ " + (error || "Unable to connect to the server.");
 
-        },
+            if (!botMessageAdded) {
+              botMessageAdded = true;
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: botId,
+                  sender: "bot",
+                  text: errorText,
+                  html: renderMarkdown(errorText),
+                  time: getCurrentTime(),
+                },
+              ]);
+            } else {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === botId
+                    ? {
+                        ...msg,
 
-        // ===================================
-        // Completed
-        // ===================================
+                        text: errorText,
 
-        (finalText) => {
+                        html: renderMarkdown(errorText),
+                      }
+                    : msg,
+                ),
+              );
+            }
+          },
+        );
+      } catch (error) {
+        setTyping(false);
 
-          setTyping(false);
+        const errText = "⚠️ Unable to connect to the server.";
 
-          if (!botMessageAdded) {
-            // Edge case: stream completed with no chunks (e.g., empty response)
-            botMessageAdded = true;
-            setMessages(prev => [
-              ...prev,
-              {
-                id: botId,
-                sender: "bot",
-                text: finalText || "I couldn't find an answer to that.",
-                html: renderMarkdown(finalText || "I couldn't find an answer to that."),
-                time: getCurrentTime()
-              }
-            ]);
-          } else {
-            setMessages(prev =>
-              prev.map(msg =>
+        if (!botMessageAdded) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: botId,
+              sender: "bot",
+              text: errText,
+              html: renderMarkdown(errText),
+              time: getCurrentTime(),
+            },
+          ]);
+        } else {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === botId
+                ? {
+                    ...msg,
 
-                msg.id === botId
+                    text: errText,
 
-                  ? {
-
-                      ...msg,
-
-                      text: finalText,
-
-                      html: renderMarkdown(finalText)
-
-                    }
-
-                  : msg
-
-              )
-            );
-          }
-
-          // -------------------------------
-          // Show Lead Form
-          // ✅ Expanded trigger conditions
-          // -------------------------------
-
-          if (
-            finalText.includes("👉") ||
-            finalText.toLowerCase().includes("free quote") ||
-            finalText.toLowerCase().includes("get in touch") ||
-            finalText.toLowerCase().includes("contact us")
-          ) {
-
-            setShowLeadForm(true);
-
-          }
-
-        },
-
-        // ===================================
-        // Error
-        // ===================================
-
-        (error) => {
-
-          setTyping(false);
-
-          const errorText = "⚠️ " + (error || "Unable to connect to the server.");
-
-          if (!botMessageAdded) {
-            botMessageAdded = true;
-            setMessages(prev => [
-              ...prev,
-              {
-                id: botId,
-                sender: "bot",
-                text: errorText,
-                html: renderMarkdown(errorText),
-                time: getCurrentTime()
-              }
-            ]);
-          } else {
-            setMessages(prev =>
-              prev.map(msg =>
-
-                msg.id === botId
-
-                  ? {
-
-                      ...msg,
-
-                      text: errorText,
-
-                      html: renderMarkdown(errorText)
-
-                    }
-
-                  : msg
-
-              )
-            );
-          }
-
+                    html: renderMarkdown(errText),
+                  }
+                : msg,
+            ),
+          );
         }
 
-      );
-
-    } catch (error) {
-
-      setTyping(false);
-
-      const errText = "⚠️ Unable to connect to the server.";
-
-      if (!botMessageAdded) {
-        setMessages(prev => [
-          ...prev,
-          {
-            id: botId,
-            sender: "bot",
-            text: errText,
-            html: renderMarkdown(errText),
-            time: getCurrentTime()
-          }
-        ]);
-      } else {
-        setMessages(prev =>
-          prev.map(msg =>
-
-            msg.id === botId
-
-              ? {
-
-                  ...msg,
-
-                  text: errText,
-
-                  html: renderMarkdown(errText)
-
-                }
-
-              : msg
-
-          )
-        );
+        console.error(error);
+      } finally {
+        // ✅ Release streaming guard
+        isStreamingRef.current = false;
       }
-
-      console.error(error);
-
-    } finally {
-
-      // ✅ Release streaming guard
-      isStreamingRef.current = false;
-
-    }
-
-  }, [input]);
+    },
+    [input],
+  );
 
   // ======================================================
   // Submit Lead Form
   // ======================================================
 
   async function submitLeadForm() {
-
     setLeadError("");
 
     // -----------------------------
@@ -431,14 +367,12 @@ export default function useChat() {
     // -----------------------------
 
     if (!leadData.name.trim()) {
-
       setLeadError("Please enter your name.");
 
       return;
     }
 
     if (!isValidEmail(leadData.email)) {
-
       setLeadError("Please enter a valid email address.");
 
       return;
@@ -447,13 +381,10 @@ export default function useChat() {
     setSendingLead(true);
 
     try {
-
       await submitLead({
-
         name: leadData.name.trim(),
 
-        email: leadData.email.trim()
-
+        email: leadData.email.trim(),
       });
 
       // -----------------------------
@@ -461,7 +392,6 @@ export default function useChat() {
       // -----------------------------
 
       const successMessage = {
-
         id: generateId(),
 
         sender: "bot",
@@ -469,51 +399,32 @@ export default function useChat() {
         text: `✅ Thanks ${leadData.name}! We'll contact you at ${leadData.email} soon.`,
 
         html: renderMarkdown(
-          `✅ Thanks **${leadData.name}**! We'll contact you at **${leadData.email}** soon.`
+          `✅ Thanks **${leadData.name}**! We'll contact you at **${leadData.email}** soon.`,
         ),
 
-        time: getCurrentTime()
-
+        time: getCurrentTime(),
       };
 
-      setMessages(prev => [
-
-        ...prev,
-
-        successMessage
-
-      ]);
+      setMessages((prev) => [...prev, successMessage]);
 
       // -----------------------------
       // Reset Form
       // -----------------------------
 
       setLeadData({
-
         name: "",
 
-        email: ""
-
+        email: "",
       });
 
       setShowLeadForm(false);
-
     } catch (error) {
-
       console.error(error);
 
-      setLeadError(
-
-        "Unable to submit your request. Please try again."
-
-      );
-
+      setLeadError("Unable to submit your request. Please try again.");
     } finally {
-
       setSendingLead(false);
-
     }
-
   }
 
   // ======================================================
@@ -521,19 +432,15 @@ export default function useChat() {
   // ======================================================
 
   function closeLeadForm() {
-
     setShowLeadForm(false);
 
     setLeadError("");
 
     setLeadData({
-
       name: "",
 
-      email: ""
-
+      email: "",
     });
-
   }
 
   // ======================================================
@@ -541,15 +448,11 @@ export default function useChat() {
   // ======================================================
 
   function handleKeyDown(e) {
-
     if (e.key === "Enter" && !e.shiftKey) {
-
       e.preventDefault();
 
       sendMessage();
-
     }
-
   }
 
   // ======================================================
@@ -557,9 +460,7 @@ export default function useChat() {
   // ======================================================
 
   function resetChat() {
-
     const welcome = {
-
       id: generateId(),
 
       sender: "bot",
@@ -568,8 +469,7 @@ export default function useChat() {
 
       html: renderMarkdown(WELCOME_MESSAGE),
 
-      time: getCurrentTime()
-
+      time: getCurrentTime(),
     };
 
     setMessages([welcome]);
@@ -581,17 +481,14 @@ export default function useChat() {
     setShowLeadForm(false);
 
     setLeadData({
-
       name: "",
 
-      email: ""
-
+      email: "",
     });
 
     setLeadError("");
 
     isStreamingRef.current = false;
-
   }
 
   // ======================================================
@@ -599,7 +496,6 @@ export default function useChat() {
   // ======================================================
 
   return {
-
     // -----------------------------
     // Chat
     // -----------------------------
@@ -661,8 +557,6 @@ export default function useChat() {
     // Keyboard
     // -----------------------------
 
-    handleKeyDown
-
+    handleKeyDown,
   };
-
 }
