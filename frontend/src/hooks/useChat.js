@@ -18,34 +18,23 @@ export default function useChat() {
   // ======================================================
 
   const [messages, setMessages] = useState([]);
-
   const [typing, setTyping] = useState(false);
-
+  const [isStreaming, setIsStreaming] = useState(false);
   const [input, setInput] = useState("");
-
   const [isOpen, setIsOpen] = useState(false);
-
   const [showLeadForm, setShowLeadForm] = useState(false);
-
   const [sendingLead, setSendingLead] = useState(false);
-
   const [leadError, setLeadError] = useState("");
-
   const [leadData, setLeadData] = useState({
     name: "",
-
     email: "",
   });
 
   // ======================================================
   // References
   // ======================================================
-
   const messagesRef = useRef(null);
-
   const textareaRef = useRef(null);
-
-  // ✅ Ref to track streaming state (avoids stale closure issues)
   const isStreamingRef = useRef(false);
 
   // ======================================================
@@ -149,6 +138,7 @@ export default function useChat() {
 
       // Set streaming guard immediately
       isStreamingRef.current = true;
+      setIsStreaming(true);
 
       // -------------------------------
       // User Message
@@ -348,8 +338,9 @@ export default function useChat() {
 
         console.error(error);
       } finally {
-        // ✅ Release streaming guard
+        // Release streaming guards
         isStreamingRef.current = false;
+        setIsStreaming(false);
       }
     },
     [input],
@@ -517,7 +508,7 @@ export default function useChat() {
     resetChat,
 
     // Expose streaming state for disabling input
-    isStreaming: isStreamingRef.current,
+    isStreaming,
 
     // -----------------------------
     // Suggestions

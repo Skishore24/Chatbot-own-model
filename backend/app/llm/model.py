@@ -4,7 +4,7 @@ backend/app/llm/model.py
 Enterprise GPT Model Architecture:
 - RMSNorm
 - Rotary Positional Embeddings (RoPE)
-- Causal Grouped-Query Attention (GQA) with KV Cache
+- Cache-Aware Causal Grouped-Query Attention (GQA) with KV Cache & Padding Mask
 - SwiGLU Feed-Forward Network
 - Weight-tied output projection
 """
@@ -49,6 +49,7 @@ class TransformerBlock(nn.Module):
         self,
         x: torch.Tensor,
         freqs_cis: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
         past_k: Optional[torch.Tensor] = None,
         past_v: Optional[torch.Tensor] = None,
         use_cache: bool = False,
@@ -57,6 +58,7 @@ class TransformerBlock(nn.Module):
         attn_out, present_k, present_v = self.attn(
             self.rms_1(x),
             freqs_cis,
+            attention_mask=attention_mask,
             past_k=past_k,
             past_v=past_v,
             use_cache=use_cache,
@@ -110,11 +112,13 @@ class EnterpriseGPTModel(nn.Module):
     def forward(
         self,
         input_ids: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
         past_key_values: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
         use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[List[Tuple[torch.Tensor, torch.Tensor]]]]:
         """
         input_ids: [B, seq_len]
+        attention_mask: [B, seq_len] or [B, total_k_len]
         past_key_values: list of (past_k, past_v) for each layer
         returns: (logits [B, seq_len, vocab_size], presents)
         """
@@ -130,6 +134,7 @@ class EnterpriseGPTModel(nn.Module):
             h, present_k, present_v = layer(
                 h,
                 self.freqs_cis,
+                attention_mask=attention_mask,
                 past_k=past_k,
                 past_v=past_v,
                 use_cache=use_cache,

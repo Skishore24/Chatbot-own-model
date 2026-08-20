@@ -4,7 +4,7 @@ backend/app/llm/generation.py
 Autoregressive Generation Engine for Genkit AI V6.
 - Greedy & Temperature Sampling with Top-K, Top-P, and Repetition Penalty
 - Real incremental token-by-token streaming generator
-- KV-Cache acceleration
+- Cache-aware attention acceleration
 """
 
 from typing import Generator, List, Optional
@@ -45,10 +45,10 @@ def top_k_top_p_filtering(
 class GenerationEngine:
     """Autoregressive text generation and streaming generator."""
 
-    def __init__(self, model: EnterpriseGPTModel, tokenizer: ByteFallbackBPETokenizer):
+    def __init__(self, model: Optional[EnterpriseGPTModel], tokenizer: ByteFallbackBPETokenizer):
         self.model = model
         self.tokenizer = tokenizer
-        self.device = next(model.parameters()).device
+        self.device = next(model.parameters()).device if model is not None else torch.device("cpu")
 
     @torch.inference_mode()
     def generate(
@@ -61,6 +61,8 @@ class GenerationEngine:
         repetition_penalty: Optional[float] = None,
     ) -> str:
         """Generates a complete response string for a prompt."""
+        if self.model is None:
+            return ""
         chunks = list(
             self.generate_stream(
                 prompt,
@@ -87,6 +89,9 @@ class GenerationEngine:
         Real incremental token-by-token streaming generator.
         Decodes each generated token and yields clean chunks.
         """
+        if self.model is None:
+            return
+
         max_tokens = max_new_tokens or settings.MAX_NEW_TOKENS
         temp = temperature if temperature is not None else settings.TEMPERATURE
         k = top_k if top_k is not None else settings.TOP_K
@@ -103,11 +108,17 @@ class GenerationEngine:
             input_ids = input_ids[-max_prompt_len:]
 
         x = torch.tensor([input_ids], dtype=torch.long, device=self.device)
+        attention_mask = (x != self.tokenizer.pad_id).long()
         generated_ids: List[int] = list(input_ids)
         past_key_values = None
 
         # Pre-fill KV-Cache on prompt
-        logits, past_key_values = self.model(x, past_key_values=None, use_cache=True)
+        logits, past_key_values = self.model(
+            x,
+            attention_mask=attention_mask,
+            past_key_values=None,
+            use_cache=True,
+        )
         next_token_logits = logits[:, -1, :]
 
         for _ in range(max_tokens):
@@ -141,5 +152,10 @@ class GenerationEngine:
                 yield chunk_text
 
             # Single token forward step with KV-Cache
-            logits, past_key_values = self.model(next_token, past_key_values=past_key_values, use_cache=True)
+            logits, past_key_values = self.model(
+                next_token,
+                attention_mask=None,
+                past_key_values=past_key_values,
+                use_cache=True,
+            )
             next_token_logits = logits[:, -1, :]

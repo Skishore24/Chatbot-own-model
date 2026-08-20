@@ -1,12 +1,16 @@
 """
 backend/app/api/chat.py
 ----------------------------------------------------
-Standard synchronous chat endpoint for Genkit AI V6.
+Standard synchronous chat endpoint for Genkit AI V6.1.
+- Input security & rate limiting
+- Hybrid RAG retrieval & Grounding
+- Custom LLM inference (with ModelStatus readiness guard)
+- Answer-level grounding validation
 """
 
 import time
 import uuid
-from typing import Optional
+from typing import Optional, Tuple
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.core.config import settings
@@ -15,21 +19,22 @@ from app.core.security import security_service
 from app.schemas.chat import ChatRequest, ChatResponse, ChatSource
 from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
-from app.llm.inference import load_model_and_tokenizer
+from app.llm.inference import load_model_and_tokenizer, ModelStatus
 from app.llm.generation import GenerationEngine
 
 router = APIRouter(tags=["Chat"])
 
-# Lazy singleton model runtime
+# Lazy singleton model runtime & status
 _engine: Optional[GenerationEngine] = None
+_model_status: str = ModelStatus.NOT_TRAINED
 
 
-def get_generation_engine() -> GenerationEngine:
-    global _engine
+def get_generation_engine_and_status() -> Tuple[GenerationEngine, str]:
+    global _engine, _model_status
     if _engine is None:
-        model, tokenizer, _ = load_model_and_tokenizer()
+        model, tokenizer, _, _model_status = load_model_and_tokenizer()
         _engine = GenerationEngine(model, tokenizer)
-    return _engine
+    return _engine, _model_status
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -72,18 +77,25 @@ async def chat_endpoint(request: ChatRequest, req: Request):
             for c in chunks
         ]
 
-        # 5. Build Structured Prompt & Generate with Local Model
-        prompt = rag_pipeline.build_prompt(cleaned_query, chunks)
-        engine = get_generation_engine()
-        raw_answer = engine.generate(prompt)
+        engine, model_status = get_generation_engine_and_status()
 
-        # 6. Sanitize Output
-        answer = security_service.sanitize_output(raw_answer)
-        if not answer:
-            # Fallback to top retrieved chunk content if model generated empty string
-            answer = f"Based on Genkit verified knowledge: {chunks[0].text}"
+        if model_status == ModelStatus.READY and engine.model is not None:
+            # 5. Generate with trained custom LLM
+            prompt = rag_pipeline.build_prompt(cleaned_query, chunks)
+            raw_answer = engine.generate(prompt)
+            cleaned_answer = security_service.sanitize_output(raw_answer)
 
-    # 7. Persist Response & Return
+            # Validate answer-level groundedness against context
+            if cleaned_answer and rag_pipeline.validator.validate_answer_groundedness(cleaned_answer, chunks):
+                answer = cleaned_answer
+            else:
+                # Fallback to verified context if generated answer was ungrounded or empty
+                answer = f"{chunks[0].text}"
+        else:
+            # Model not trained / incompatible: use deterministic verified RAG answer
+            answer = f"{chunks[0].text}"
+
+    # 6. Persist Response & Return
     latency_ms = (time.time() - start_time) * 1000
     ChatRepository.save_message(
         session_id=session_id,

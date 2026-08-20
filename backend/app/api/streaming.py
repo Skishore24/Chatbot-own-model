@@ -1,7 +1,10 @@
 """
 backend/app/api/streaming.py
 ----------------------------------------------------
-Real Server-Sent Events (SSE) token-by-token streaming endpoint for Genkit AI V6.
+Real Server-Sent Events (SSE) token-by-token streaming endpoint for Genkit AI V6.1.
+- Incremental token streaming from trained custom LLM
+- Deterministic RAG fallback if model not trained or incompatible
+- Persists full response with latency into MySQL
 """
 
 import json
@@ -17,7 +20,8 @@ from app.core.security import security_service
 from app.schemas.chat import ChatRequest
 from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
-from app.api.chat import get_generation_engine
+from app.llm.inference import ModelStatus
+from app.api.chat import get_generation_engine_and_status
 
 router = APIRouter(tags=["Streaming"])
 
@@ -26,7 +30,7 @@ async def sse_token_generator(query: str, session_id: str) -> AsyncGenerator[str
     """Generates real Server-Sent Events stream token-by-token."""
     start_time = time.time()
     rag_pipeline = get_rag_pipeline()
-    engine = get_generation_engine()
+    engine, model_status = get_generation_engine_and_status()
 
     # 1. RAG Retrieval & Grounding
     chunks, confidence, is_grounded = rag_pipeline.retrieve(query)
@@ -54,7 +58,7 @@ async def sse_token_generator(query: str, session_id: str) -> AsyncGenerator[str
         refusal = rag_pipeline.get_refusal_answer()
         full_answer_parts.append(refusal)
         yield f"data: {json.dumps({'event': 'token', 'chunk': refusal})}\n\n"
-    else:
+    elif model_status == ModelStatus.READY and engine.model is not None:
         prompt = rag_pipeline.build_prompt(query, chunks)
         try:
             for token_chunk in engine.generate_stream(prompt):
@@ -66,6 +70,11 @@ async def sse_token_generator(query: str, session_id: str) -> AsyncGenerator[str
             logger.error(f"Error during token streaming: {e}")
             error_payload = {"event": "error", "message": "Streaming interrupted"}
             yield f"data: {json.dumps(error_payload)}\n\n"
+    else:
+        # Fallback to verified context chunk
+        context_answer = f"{chunks[0].text}" if chunks else "No relevant context found."
+        full_answer_parts.append(context_answer)
+        yield f"data: {json.dumps({'event': 'token', 'chunk': context_answer})}\n\n"
 
     full_answer = "".join(full_answer_parts).strip()
     if not full_answer and chunks:

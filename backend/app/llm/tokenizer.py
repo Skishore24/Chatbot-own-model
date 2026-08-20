@@ -5,6 +5,8 @@ Deterministic Byte-Fallback BPE Tokenizer for Genkit AI V6.
 Pure Python implementation:
 - 10 special tokens
 - 256 byte tokens (<0x00> .. <0xFF>) for 100% UTF-8 safety
+- Unified pre-tokenization across training and inference
+- Strict vocabulary bounding
 - Learned BPE merges
 - Encode / Decode round-trip
 """
@@ -23,15 +25,34 @@ SPECIAL_TOKENS = [
     "<context_end>",
     "<query_start>",
     "<query_end>",
+    "<thought_start>",
+    "<thought_end>",
     "<ans_start>",
     "<ans_end>",
 ]
 
-# Standard Unicode pre-tokenization regex for Python built-in re
-PRE_TOKENIZE_REGEX = re.compile(
-    r"""'(?:[sdmt]|ll|ve|re)| ?\w+| ?[^\s\w]+|\s+(?!\S)|\s+""",
-    re.UNICODE,
-)
+# Canonical pre-tokenization regex used for both training and inference
+PRE_TOKENIZE_REGEX = re.compile(r"\w+|[^\w\s]|\s+", re.UNICODE)
+
+
+def pre_tokenize(text: str) -> List[str]:
+    """
+    Unified deterministic pre-tokenizer for training, inference, and evaluation.
+    Preserves special control tokens <...> while tokenizing words, punctuation, and whitespace.
+    """
+    if not text:
+        return []
+    
+    parts = re.split(r"(<[a-zA-Z0-9_]+>)", text)
+    tokens: List[str] = []
+    for part in parts:
+        if not part:
+            continue
+        if part.startswith("<") and part.endswith(">") and part in SPECIAL_TOKENS:
+            tokens.append(part)
+        else:
+            tokens.extend(PRE_TOKENIZE_REGEX.findall(part))
+    return tokens
 
 
 def _get_stats(words: Dict[Tuple[str, ...], int]) -> Dict[Tuple[str, str], int]:
@@ -108,50 +129,43 @@ class ByteFallbackBPETokenizer:
         return self.encoder.get("<unk>", 3)
 
     def train_on_corpus(self, sentences: List[str], target_vocab_size: Optional[int] = None) -> None:
-        """Trains BPE merges on text corpus up to target vocabulary size."""
+        """Trains BPE merges on text corpus with unified pre-tokenization and strict vocabulary capping."""
         target_size = target_vocab_size or self.target_vocab_size
         self._init_base_vocabulary()
         self.merges = []
 
-        # Count word frequencies using basic whitespace/punctuation pre-tokenization
+        # Count word frequencies using the canonical pre_tokenize function
         word_freqs: Dict[Tuple[str, ...], int] = {}
         for sentence in sentences:
-            words = re.findall(r"\w+|[^\w\s]", sentence, re.UNICODE)
-            for word in words:
-                # Convert characters to characters
+            for word in pre_tokenize(sentence):
+                if word in self._special_set:
+                    continue
                 char_tuple = tuple(list(word))
                 if char_tuple:
                     word_freqs[char_tuple] = word_freqs.get(char_tuple, 0) + 1
 
-        # Also add space prefix tokens for words
-        for sentence in sentences:
-            tokens = sentence.split()
-            for token in tokens:
-                char_tuple = tuple([" "] + list(token)) if token else tuple()
-                if char_tuple:
-                    word_freqs[char_tuple] = word_freqs.get(char_tuple, 0) + 1
-
-        # Add single character tokens to vocabulary first
+        # Add single character tokens to vocabulary first (if space permits)
         all_chars = set()
         for word in word_freqs.keys():
             for ch in word:
                 all_chars.add(ch)
 
         for ch in sorted(all_chars):
+            if len(self.encoder) >= target_size:
+                break
             if ch not in self.encoder:
                 idx = len(self.encoder)
                 self.encoder[ch] = idx
                 self.decoder[idx] = ch
 
-        # Iteratively find most frequent pairs and merge
-        num_merges = max(0, target_size - len(self.encoder))
-        for _ in range(num_merges):
+        # Iteratively find most frequent pairs and merge up to strict target_size
+        while len(self.encoder) < target_size:
             stats = _get_stats(word_freqs)
             if not stats:
                 break
             best_pair = max(stats, key=stats.get)
             if stats[best_pair] < 2:
-                # Pair occurred only once, stop merging
+                # No more frequent subword pairs
                 break
 
             merged_token = best_pair[0] + best_pair[1]
@@ -168,7 +182,7 @@ class ByteFallbackBPETokenizer:
             word_freqs = new_word_freqs
 
     def _bpe_encode_word(self, word: str) -> List[str]:
-        """Applies learned BPE merges to a single word."""
+        """Applies learned BPE merges to a single pre-tokenized token."""
         if not word:
             return []
         tokens = list(word)
@@ -180,7 +194,7 @@ class ByteFallbackBPETokenizer:
         return tokens
 
     def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:
-        """Encodes text into token ID sequence with byte fallback."""
+        """Encodes text into token ID sequence with byte fallback using canonical pre-tokenizer."""
         if not text:
             return []
 
@@ -188,27 +202,22 @@ class ByteFallbackBPETokenizer:
         if add_special_tokens:
             token_ids.append(self.bos_id)
 
-        # Process text using word splitting while preserving special tokens
-        parts = re.split(r"(<[a-zA-Z0-9_]+>)", text)
-        for part in parts:
-            if not part:
-                continue
-            if part in self._special_set and part in self.encoder:
-                token_ids.append(self.encoder[part])
+        # Pre-tokenize using the canonical pre_tokenize function
+        tokens = pre_tokenize(text)
+        for word in tokens:
+            if word in self._special_set and word in self.encoder:
+                token_ids.append(self.encoder[word])
                 continue
 
-            # Tokenize regular text
-            words = re.findall(r"\w+|[^\w\s]|\s+", part, re.UNICODE)
-            for word in words:
-                subwords = self._bpe_encode_word(word)
-                for sw in subwords:
-                    if sw in self.encoder:
-                        token_ids.append(self.encoder[sw])
-                    else:
-                        # Byte fallback for unseen characters/symbols
-                        for b in sw.encode("utf-8"):
-                            byte_tok = f"<0x{b:02X}>"
-                            token_ids.append(self.encoder.get(byte_tok, self.unk_id))
+            subwords = self._bpe_encode_word(word)
+            for sw in subwords:
+                if sw in self.encoder:
+                    token_ids.append(self.encoder[sw])
+                else:
+                    # Byte fallback for unseen characters/symbols
+                    for b in sw.encode("utf-8"):
+                        byte_tok = f"<0x{b:02X}>"
+                        token_ids.append(self.encoder.get(byte_tok, self.unk_id))
 
         if add_special_tokens:
             token_ids.append(self.eos_id)

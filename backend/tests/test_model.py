@@ -1,7 +1,7 @@
 """
 backend/tests/test_model.py
 ----------------------------------------------------
-Unit tests for Neural Model, Attention, RoPE, and KV Cache.
+Unit tests for Neural Model, Attention, RoPE, KV Cache, and Attention Masking.
 """
 
 import unittest
@@ -16,6 +16,7 @@ from app.llm.model import EnterpriseGPTModel
 class TestEnterpriseGPTModel(unittest.TestCase):
 
     def setUp(self):
+        torch.manual_seed(42)
         self.config = GPTConfig(
             vocab_size=100,
             block_size=64,
@@ -55,7 +56,8 @@ class TestEnterpriseGPTModel(unittest.TestCase):
     def test_forward_pass_shapes(self):
         """Verify full sequence forward pass output shape."""
         input_ids = torch.randint(0, 100, (2, 16))
-        logits, presents = self.model(input_ids, use_cache=False)
+        attention_mask = torch.ones((2, 16), dtype=torch.long)
+        logits, presents = self.model(input_ids, attention_mask=attention_mask, use_cache=False)
         self.assertEqual(logits.shape, (2, 16, 100))
         self.assertIsNone(presents)
 
@@ -82,6 +84,22 @@ class TestEnterpriseGPTModel(unittest.TestCase):
         # Numerical comparison
         diff = torch.max(torch.abs(target_next_logits - cached_next_logits)).item()
         self.assertLess(diff, 1e-4, f"Cached logits diverged from full forward pass (diff={diff})")
+
+    def test_full_step_by_step_token_equivalence(self):
+        """Verify token-by-token sequential KV-cache accumulation yields identical outputs at every single step."""
+        tokens = [12, 45, 78, 23, 89]
+        input_tensor = torch.tensor([tokens], dtype=torch.long)
+
+        with torch.inference_mode():
+            full_logits, _ = self.model(input_tensor, use_cache=False)
+
+            past_kv = None
+            for idx, tok in enumerate(tokens):
+                tok_tensor = torch.tensor([[tok]], dtype=torch.long)
+                step_logit, past_kv = self.model(tok_tensor, past_key_values=past_kv, use_cache=True)
+                step_target = full_logits[:, idx : idx + 1, :]
+                diff = torch.max(torch.abs(step_logit - step_target)).item()
+                self.assertLess(diff, 1e-4, f"Step {idx} cached logit mismatch (diff={diff})")
 
 
 if __name__ == "__main__":
