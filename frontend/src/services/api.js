@@ -1,5 +1,5 @@
 // ======================================================
-// Genkit AI API Service v5.0
+// Genkit AI API Service v6.0
 // ======================================================
 
 const API_BASE = "";
@@ -29,7 +29,7 @@ export function saveSessionId(id) {
 export async function sendChatMessage(message, onChunk, onComplete, onError) {
   try {
     const sessionId = getSessionId();
-    const response = await fetch(`${API_BASE}/api/v5/chat/stream`, {
+    const response = await fetch(`${API_BASE}/api/v1/chat/stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -68,7 +68,7 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
       const chunkText = decoder.decode(value, { stream: true });
       sseBuffer += chunkText;
 
-      // Check if response is SSE (data: {...}) or raw text
+      // Parse SSE lines
       if (sseBuffer.includes("data: ")) {
         const lines = sseBuffer.split("\n\n");
         sseBuffer = lines.pop() || "";
@@ -85,7 +85,6 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
                 if (payload.session_id) saveSessionId(payload.session_id);
               }
             } catch (_) {
-              // Raw chunk fallback
               const raw = trimmed.replace(/^data:\s*/, "");
               if (raw && !raw.startsWith("{")) {
                 fullResponse += raw;
@@ -95,7 +94,6 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
           }
         }
       } else {
-        // Raw stream fallback
         fullResponse += chunkText;
         if (onChunk) onChunk(fullResponse);
       }
@@ -120,7 +118,7 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
 // ------------------------------------------------------
 
 export async function submitLead(data) {
-  const response = await fetch(`${API_BASE}/api/v5/lead`, {
+  const response = await fetch(`${API_BASE}/api/v1/leads`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -151,7 +149,7 @@ export async function submitLead(data) {
 
 export async function checkServer() {
   try {
-    const response = await fetch(`${API_BASE}/health`);
+    const response = await fetch(`${API_BASE}/api/v1/health`);
     return response.ok;
   } catch {
     return false;

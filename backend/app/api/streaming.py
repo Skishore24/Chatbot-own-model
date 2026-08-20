@@ -1,62 +1,123 @@
 """
 backend/app/api/streaming.py
 ----------------------------------------------------
-GENKIT AI v5.0 Server-Sent Events (SSE) Token Stream Generator
-Asynchronous token generator yielding standard text/event-stream data lines.
+Real Server-Sent Events (SSE) token-by-token streaming endpoint for Genkit AI V6.
 """
 
 import json
-import asyncio
-from typing import AsyncGenerator, Generator
-from starlette.responses import StreamingResponse
+import time
+import uuid
+from typing import AsyncGenerator
+from fastapi import APIRouter, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
+
+from app.core.config import settings
+from app.core.logger import logger
+from app.core.security import security_service
+from app.schemas.chat import ChatRequest
+from app.database.repository import ChatRepository
+from app.rag.pipeline import get_rag_pipeline
+from app.api.chat import get_generation_engine
+
+router = APIRouter(tags=["Streaming"])
 
 
-class SSEEventStream:
-    """Enterprise Server-Sent Events Stream Formatter."""
+async def sse_token_generator(query: str, session_id: str) -> AsyncGenerator[str, None]:
+    """Generates real Server-Sent Events stream token-by-token."""
+    start_time = time.time()
+    rag_pipeline = get_rag_pipeline()
+    engine = get_generation_engine()
 
-    @staticmethod
-    async def format_sse_generator(
-        token_generator: Generator[str, None, None],
-        session_id: str,
-        intent: str = "General",
-        confidence: float = 1.0,
-    ) -> AsyncGenerator[str, None]:
-        """
-        Asynchronously yields formatted SSE stream events.
-        """
-        # Yield metadata start event
-        meta_payload = {
-            "event": "start",
-            "session_id": session_id,
-            "intent": intent,
-            "confidence": confidence,
-        }
-        yield f"data: {json.dumps(meta_payload)}\n\n"
-        await asyncio.sleep(0.01)
+    # 1. RAG Retrieval & Grounding
+    chunks, confidence, is_grounded = rag_pipeline.retrieve(query)
 
-        # Yield stream token chunks
-        for token in token_generator:
-            token_payload = {"event": "token", "chunk": token}
-            yield f"data: {json.dumps(token_payload)}\n\n"
-            await asyncio.sleep(0.005)
+    sources_data = [
+        {"id": c.id, "title": c.title, "category": c.category, "score": c.score}
+        for c in chunks
+    ]
+    intent = chunks[0].category if chunks else ("General" if is_grounded else "OutOfDomain")
 
-        # Yield completion event
-        end_payload = {"event": "end", "status": "completed"}
-        yield f"data: {json.dumps(end_payload)}\n\n"
+    # Yield START event
+    start_payload = {
+        "event": "start",
+        "session_id": session_id,
+        "intent": intent,
+        "grounded": is_grounded,
+        "sources": sources_data,
+    }
+    yield f"data: {json.dumps(start_payload)}\n\n"
 
+    full_answer_parts = []
 
-def create_sse_response(
-    token_generator: Generator[str, None, None],
-    session_id: str,
-    intent: str = "General",
-    confidence: float = 1.0,
-) -> StreamingResponse:
-    """Wraps SSE generator into Starlette StreamingResponse with correct event-stream headers."""
-    async_gen = SSEEventStream.format_sse_generator(
-        token_generator, session_id=session_id, intent=intent, confidence=confidence
+    # 2. Refusal or Streaming Generation
+    if not is_grounded:
+        refusal = rag_pipeline.get_refusal_answer()
+        full_answer_parts.append(refusal)
+        yield f"data: {json.dumps({'event': 'token', 'chunk': refusal})}\n\n"
+    else:
+        prompt = rag_pipeline.build_prompt(query, chunks)
+        try:
+            for token_chunk in engine.generate_stream(prompt):
+                if token_chunk:
+                    full_answer_parts.append(token_chunk)
+                    token_payload = {"event": "token", "chunk": token_chunk}
+                    yield f"data: {json.dumps(token_payload)}\n\n"
+        except Exception as e:
+            logger.error(f"Error during token streaming: {e}")
+            error_payload = {"event": "error", "message": "Streaming interrupted"}
+            yield f"data: {json.dumps(error_payload)}\n\n"
+
+    full_answer = "".join(full_answer_parts).strip()
+    if not full_answer and chunks:
+        full_answer = f"Based on Genkit verified knowledge: {chunks[0].text}"
+        yield f"data: {json.dumps({'event': 'token', 'chunk': full_answer})}\n\n"
+
+    # Persist message
+    latency_ms = (time.time() - start_time) * 1000
+    ChatRepository.save_message(
+        session_id=session_id,
+        role_or_sender="assistant",
+        content=full_answer,
+        intent=intent,
+        confidence_score=confidence,
+        latency_ms=round(latency_ms, 2),
     )
+
+    # Yield END event
+    end_payload = {
+        "event": "end",
+        "answer": full_answer,
+        "confidence": confidence,
+        "latency_ms": round(latency_ms, 2),
+    }
+    yield f"data: {json.dumps(end_payload)}\n\n"
+
+
+@router.post("/chat/stream")
+async def chat_stream_endpoint(request: ChatRequest, req: Request):
+    """Real SSE token-by-token streaming endpoint."""
+    client_ip = req.client.host if req.client else "127.0.0.1"
+
+    # 1. Rate Limit
+    if not security_service.check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Please wait a moment.",
+        )
+
+    # 2. Sanitize
+    cleaned_query, is_safe = security_service.sanitize_input(request.message)
+    if not is_safe or security_service.scan_prompt_injection(cleaned_query):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Your query was flagged by our security guard.",
+        )
+
+    session_id = request.session_id or str(uuid.uuid4())[:8]
+    ChatRepository.save_message(session_id, "user", cleaned_query)
+
     return StreamingResponse(
-        async_gen,
+        sse_token_generator(cleaned_query, session_id),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

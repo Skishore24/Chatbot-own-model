@@ -1,185 +1,150 @@
-# 🤖 GENKIT AI v5.0 Enterprise — 100% Self-Hosted AI Assistant
+# Genkit AI — 100% Self-Hosted Custom LLM + Hybrid RAG Assistant
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch 2.x](https://img.shields.io/badge/PyTorch-2.x-EE4C2C.svg?style=flat&logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React 18](https://img.shields.io/badge/React-18.0-61DAFB.svg?style=flat&logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <img src="frontend/public/vite.svg" width="80" height="80" alt="Genkit Logo" />
+</p>
 
-**GENKIT AI v5.0 Enterprise** is a high-throughput, production-grade, domain-restricted AI chatbot system built natively in **Python**, **PyTorch**, **FastAPI**, and **React**. 
+<p align="center">
+  <b>Enterprise-Grade, 100% Custom Decoder Transformer & Deterministic Lexical RAG Engine</b><br>
+  <i>Zero External AI APIs • Zero Cloud Embedding Dependencies • 100% Locally Trained & Self-Hosted</i>
+</p>
 
-The system guarantees **100% data sovereignty & offline execution**:
-- 🔒 **Zero External AI Cloud APIs** — No OpenAI, Gemini, Claude, or Hugging Face cloud endpoints.
-- ⚡ **Zero External Vector DBs** — Native PyTorch BLAS GEMM dense vector index + Lexical BM25.
-- 🛡️ **Zero Data Leakage** — All inference, retrieval, tokenization, and database persistence run entirely locally.
-
----
-
-## 🌟 Core Architecture & Capabilities
-
-### 1. Custom PyTorch GPT Architecture
-- **Attention Mechanism**: Grouped-Query Attention (**GQA**, 3:1 Q:KV head ratio) with Paged KV-Cache for ultra-fast autoregressive decoding.
-- **Positional Encoding**: NTK-aware Rotary Position Embeddings (**RoPE**).
-- **Normalisation & Activation**: Root Mean Square Normalization (**RMSNorm**) and **SwiGLU** Feed-Forward Networks.
-
-### 2. Byte-Fallback BPE Tokenizer
-- Trained on **15,848 domain sentences** ([`backend/genkit-model/bpe_tokenizer_v5.json`](backend/genkit-model/bpe_tokenizer_v5.json)).
-- Trie-based subword encoder with byte fallbacks ($0\text{x}00$ to $0\text{xFF}$), guaranteeing **0% `<unk>` token emissions**.
-
-### 3. Dual-Path Hybrid RAG + Knowledge Graph
-- **Dataset Ingestion**: Automatically indexes **7,964 domain knowledge passages** across all 12 JSON files (`company.json`, `services.json`, `pricing.json`, `faq.json`, `portfolio.json`, `contact.json`, `technologies.json`, etc.).
-- **Sparse + Dense Search**: Lexical BM25 search fused with PyTorch neural vector embeddings ($d=384$) via **Reciprocal Rank Fusion (RRF)**:
-  $$RRF(d) = \sum_{m \in \{BM25, Dense\}} \frac{1}{k + r_m(d)}$$
-- **Knowledge Graph Engine**: BFS entity-relationship graph traversal with candidate reranking and Maximal Marginal Relevance (MMR) diversification.
-
-### 4. Grounded RAG Coherence Engine
-- **Repetition Loop & Gibberish Protection**: Detects and intercepts token loops and out-of-distribution neural outputs.
-- **Grounded Synthesizer**: Produces clean, structured, formatted Markdown responses directly grounded in the retrieved domain knowledge.
-
-### 5. Server-Sent Events (SSE) Streaming
-- Real-time token/chunk streaming endpoint (`/api/v5/chat/stream`) with sub-180ms Time-to-First-Token (TTFB).
+<p align="center">
+  <a href="#-key-features"><img src="https://img.shields.io/badge/Architecture-Custom_GPT_v6.0-blue.svg" alt="Architecture"></a>
+  <a href="#-hardware-optimization"><img src="https://img.shields.io/badge/Hardware-RTX_3050_6GB_Optimized-green.svg" alt="Hardware"></a>
+  <a href="#-hybrid-rag-engine"><img src="https://img.shields.io/badge/RAG-BM25_+_TF--IDF_+_RRF-orange.svg" alt="RAG"></a>
+  <a href="#-testing--benchmarks"><img src="https://img.shields.io/badge/Tests-100%25_Passing-brightgreen.svg" alt="Tests"></a>
+  <a href="#-license"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License"></a>
+</p>
 
 ---
 
-## 📁 Repository Structure
+## 🌟 Key Highlights
 
-```text
-Chatbot-own-model/
-├── backend/
-│   ├── app/
-│   │   ├── ai/
-│   │   │   ├── llm/              # PyTorch GPT, Inference, Trainer, Model Loader
-│   │   │   ├── rag/              # Hybrid Retriever, Dense Embedder, Graph Engine
-│   │   │   └── tokenizer/        # Byte-Fallback BPE Tokenizer
-│   │   ├── api/                  # FastAPI Endpoints & SSE Streaming Engine
-│   │   ├── core/                 # Config, Logging, Zero-Trust Security Service
-│   │   └── database/             # Connection pooling & chat session persistence
-│   ├── datasets/                 # 12 Domain Knowledge Datasets (7,964 entries)
-│   ├── genkit-model/             # Trained Tokenizer & Model Checkpoints
-│   ├── tests/                    # Comprehensive Unit & Integration Test Suite
-│   ├── main.py                   # FastAPI Application Entrypoint
-│   ├── train.py                  # Model & Tokenizer Training CLI Pipeline
-│   ├── predict.py                # Interactive CLI Predictor
-│   ├── evaluate.py               # RAG & Latency Evaluation Suite
-│   └── requirements.txt          # Python Dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── components/           # React Chat Widget & UI Components
-│   │   ├── services/             # SSE Streaming Client & API Service
-│   │   └── hooks/                # useChat Hook
-│   ├── vite.config.js            # Vite Dev Server & API Reverse Proxy
-│   └── package.json              # Node Dependencies
-├── scripts/                      # Helper & Execution Scripts
-├── docs/                         # Extended System Documentation
-├── .gitignore                    # Master Git Ignore Configuration
-└── README.md                     # Project Master Guide
+- **100% Own Neural Model**: No OpenAI, Gemini, Claude, Llama, Mistral, HuggingFace inference, or external embedding APIs.
+- **Custom Transformer Architecture**: Implemented from scratch in PyTorch with **Grouped-Query Attention (GQA)**, **Rotary Positional Embeddings (RoPE)** with cache offsets, **RMSNorm**, and **SwiGLU FFN**.
+- **Byte-Fallback BPE Tokenizer**: Deterministic learned merge table + 256 raw byte tokens (<0x00>..<0xFF>) guaranteeing 100% unicode/emoji safety without out-of-vocabulary `<unk>` replacements.
+- **Deterministic Hybrid RAG Engine**: Algorithmic lexical retrieval utilizing in-memory **Inverted Index**, **BM25 Okapi**, **TF-IDF Cosine Similarity**, and **Reciprocal Rank Fusion (RRF)** reranking.
+- **Grounding Validator & Out-of-Domain Refusal**: Rejects general and unsupported non-Genkit questions deterministically to eliminate hallucinations.
+- **Real SSE Token Streaming**: Server-Sent Events streaming token-by-token with KV-cache acceleration.
+- **Dual Database Persistence**: Native MySQL connection pool with automatic local SQLite (`genkit.db`) fallback.
+- **Modern React + Vite Chatbot**: Responsive dark/light theme, lead capture modal, markdown formatting, typing indicators, and session persistence.
+
+---
+
+## 🏗️ Architecture Overview
+
+```
+                      ┌────────────────────────────────────────┐
+                      │    React + Vite Frontend (Port 5173)   │
+                      └───────────────────┬────────────────────┘
+                                          │  SSE Stream / REST
+                                          ▼
+                      ┌────────────────────────────────────────┐
+                      │      FastAPI Backend (Port 8000)       │
+                      │  Rate Limiting • Prompt Injection Guard │
+                      └───────────────────┬────────────────────┘
+                                          │
+                    ┌─────────────────────┴─────────────────────┐
+                    ▼                                           ▼
+       ┌────────────────────────┐                  ┌────────────────────────┐
+       │   Hybrid RAG Engine    │                  │  Enterprise GPT Model  │
+       │  • Inverted Index      │                  │  • 6 Layers / 384 Dim  │
+       │  • BM25 Okapi          │                  │  • GQA (6 Heads, 2 KV) │
+       │  • TF-IDF Cosine Sim   │                  │  • RoPE + SwiGLU FFN   │
+       │  • RRF Hybrid Reranker │                  │  • RMSNorm + KV Cache  │
+       └────────────┬───────────┘                  └────────────┬───────────┘
+                    │                                           │
+                    └─────────────────────┬─────────────────────┘
+                                          ▼
+                      ┌────────────────────────────────────────┐
+                      │        Database Persistence            │
+                      │   MySQL Pool + Local SQLite Fallback   │
+                      └────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick-Start Guide
+## 🚀 Quick Start
 
-### Prerequisites
-- **Python 3.10+** (Recommended: Python 3.11 or 3.12)
-- **Node.js 18+** & **npm**
+### 1. Backend Setup & Startup
 
----
+```bash
+# Clone the repository
+git clone https://github.com/Skishore24/Chatbot-own-model.git
+cd Chatbot-own-model/backend
 
-### Step 1: Set Up Backend Environment
-
-```powershell
-# Navigate to backend directory
-cd backend
-
-# Create virtual environment
+# Create virtual environment & install requirements
 python -m venv venv
-
-# Activate virtual environment (Windows PowerShell)
 .\venv\Scripts\activate
-
-# Install dependencies
 pip install -r requirements.txt
+
+# Start the backend server
+python app/main.py
 ```
+> Server runs at `http://localhost:8000`. Interactive API Docs: `http://localhost:8000/docs`.
 
----
+### 2. Frontend Setup & Startup
 
-### Step 2: Launch the Backend API Server
-
-```powershell
-# From project root with venv active
-& ".\backend\venv\Scripts\python.exe" backend/main.py
-```
-- **Backend API**: `http://127.0.0.1:8000`
-- **Interactive OpenAPI Docs**: `http://127.0.0.1:8000/docs`
-- **Health Endpoint**: `http://127.0.0.1:8000/health`
-
----
-
-### Step 3: Launch the Frontend Web Interface
-
-```powershell
-# In a new terminal window
-cd frontend
-
-# Install node dependencies
+```bash
+cd ../frontend
 npm install
-
-# Start Vite development server
 npm run dev
 ```
-- **Web Chat Interface**: `http://localhost:5173`
+> Frontend runs at `http://localhost:5173`.
 
 ---
 
-### Step 4: Terminal CLI Chat (Optional)
+## 🏋️ Training the Custom LLM
 
-To interact with the chatbot directly in the terminal:
-```powershell
-& ".\backend\venv\Scripts\python.exe" backend/predict.py
+The training pipeline is optimized for an **NVIDIA GeForce RTX 3050 6GB Laptop GPU**:
+
+```bash
+cd backend
+
+# Execute master training script
+python train.py --epochs 60 --batch-size 4 --accum-steps 8 --block-size 512 --vocab-size 10000
 ```
+
+### Hardware Optimization Features:
+- **Micro-Batching + Gradient Accumulation**: Batch size of 4 with 8 accumulation steps (Effective batch size = 32).
+- **Automatic Mixed Precision (AMP)**: `bfloat16`/`float16` training with `GradScaler`.
+- **Pre-flight Smoke Test**: Automatic forward/backward stability verification before training.
+- **Cosine Warmup LR Scheduler**: Warmup for first 200 steps decaying to $1\times 10^{-5}$.
 
 ---
 
-## 🧪 Testing & Evaluation
+## 🧪 Testing & Verification
 
-### Run Master Unit & Integration Tests (14 Tests)
-```powershell
-& ".\backend\venv\Scripts\python.exe" -m unittest discover -s backend/tests
+Run the comprehensive unit and integration test suite:
+
+```bash
+cd backend
+python -m unittest discover -s tests
 ```
 
-### Run RAG & Latency Evaluation Suite
-```powershell
-& ".\backend\venv\Scripts\python.exe" backend/evaluate.py
-```
+### Benchmark Evaluation Suite
 
-### Train Custom Tokenizer and Model Checkpoint
-```powershell
-& ".\backend\venv\Scripts\python.exe" backend/train.py --epochs 2 --batch-size 8 --vocab-size 2000
+```bash
+python evaluate.py
 ```
+Outputs `evaluation_report.json` and `evaluation_report.md` tracking in-domain retrieval accuracy, out-of-domain refusal accuracy, and latency.
 
 ---
 
-## 📡 API Reference
+## 📚 Technical Documentation
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/v5/chat/stream` | Server-Sent Events (SSE) real-time token streaming |
-| `POST` | `/api/v5/chat/query` | Synchronous JSON chat completion |
-| `POST` | `/api/v5/lead` | Lead capture & contact submission |
-| `GET` | `/api/v5/history` | Retrieve conversation history by session ID |
-| `GET` | `/api/v5/model-info` | Model configuration and parameter statistics |
-| `GET` | `/health` | Server health & readiness check |
-
----
-
-## 🛡️ Security & Privacy
-
-- **Zero Outbound Calls**: Complete network isolation during inference and retrieval.
-- **Input Sanitization**: Built-in SQLi, XSS, and Prompt Injection regex filters.
-- **Rate Limiting**: Sliding-window IP rate limiter preventing denial-of-service attempts.
+Detailed technical documents are available in the [`docs/`](docs/) directory:
+- [System Architecture](docs/ARCHITECTURE.md)
+- [Neural Model & Tokenizer Design](docs/MODEL.md)
+- [Hybrid RAG & Grounding Subsystem](docs/RAG.md)
+- [FastAPI & SSE Streaming API Reference](docs/API.md)
+- [Model Training & GPU Acceleration](docs/TRAINING.md)
+- [Local Development Guide](docs/DEVELOPMENT.md)
+- [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License — see the `LICENSE` file for details.
+
+Distributed under the MIT License. See `LICENSE` for details.

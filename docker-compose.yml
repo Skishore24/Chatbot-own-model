@@ -2,18 +2,20 @@ services:
   genkit-backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     container_name: genkit_ai_backend
     restart: always
     ports:
       - "8000:8000"
     environment:
       - ENVIRONMENT=production
+      - HOST=0.0.0.0
+      - PORT=8000
       - MYSQL_HOST=mysql_db
       - MYSQL_PORT=3306
       - MYSQL_USER=genkit_user
       - MYSQL_PASSWORD=genkit_secure_password_2026
-      - MYSQL_DATABASE=genkit_ai_v5
+      - MYSQL_DATABASE=genkit_ai
     depends_on:
       - mysql_db
 
@@ -23,7 +25,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: genkit_root_password
-      MYSQL_DATABASE: genkit_ai_v5
+      MYSQL_DATABASE: genkit_ai
       MYSQL_USER: genkit_user
       MYSQL_PASSWORD: genkit_secure_password_2026
     ports:

@@ -1,6 +1,14 @@
 """
-Genkit AI v5.0 Enterprise Database Subsystem
+backend/app/database/__init__.py
+----------------------------------------------------
+Database exports for Genkit AI V6.
 """
-from .connection import db_pool
 
-__all__ = ["db_pool"]
+from app.database.connection import db_manager
+from app.database.repository import ChatRepository, LeadRepository
+
+__all__ = [
+    "db_manager",
+    "ChatRepository",
+    "LeadRepository",
+]

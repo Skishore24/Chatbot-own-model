@@ -1,191 +1,102 @@
 """
 backend/app/database/connection.py
 ----------------------------------------------------
-GENKIT AI v5.0 Enterprise Async MySQL Connection Manager
-Asynchronous database connection pool with resilient fallback handling.
+Production-Grade Thread-Safe MySQL Connection Pool Manager for Genkit AI V6.
+Direct, exclusive MySQL connectivity with automatic pool reconnection.
 """
 
-import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional, Tuple
 import mysql.connector
+from mysql.connector import pooling, errors
 
-from app.core.logger import logger
 from app.core.config import settings
+from app.core.logger import logger
+from app.database.models import MYSQL_SCHEMA
 
 
-class AsyncDatabasePool:
-    """Enterprise MySQL Database Connection Manager."""
+class DatabaseManager:
+    """Thread-safe dedicated MySQL Database Connection Pool Manager."""
 
     def __init__(self):
-        self.is_connected = False
-        self._init_connection()
+        self.engine_type = "mysql"
+        self._pool: Optional[pooling.MySQLConnectionPool] = None
+        self._init_mysql_pool()
 
-    def _init_connection(self):
-        """Initializes database tables if connection is available."""
+    def _init_mysql_pool(self) -> None:
+        """Initializes the MySQL Connection Pool and applies table schema."""
         try:
-            conn = mysql.connector.connect(
-                host=settings.MYSQL_HOST,
-                port=settings.MYSQL_PORT,
-                user=settings.MYSQL_USER,
-                password=settings.MYSQL_PASSWORD,
-            )
-            cursor = conn.cursor()
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {settings.MYSQL_DATABASE};")
-            cursor.execute(f"USE {settings.MYSQL_DATABASE};")
-
-            # Create Chat History table
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS chat_messages (
-                id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(64) NOT NULL,
-                role ENUM('user', 'assistant', 'system') NOT NULL,
-                content TEXT NOT NULL,
-                intent VARCHAR(64),
-                confidence_score FLOAT,
-                tokens_generated INT,
-                latency_ms FLOAT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_session_time (session_id, created_at)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            """)
-
-            # Create Leads table
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS leads (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(64),
-                name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) NOT NULL,
-                phone VARCHAR(32),
-                service_interest VARCHAR(255),
-                estimated_budget VARCHAR(64),
-                notes TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                INDEX idx_lead_email (email)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            """)
-
-            # Create Feedback table
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS feedback (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                session_id VARCHAR(64) NOT NULL,
-                rating INT NOT NULL,
-                comment TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-            """)
-
-            conn.commit()
-            cursor.close()
-            conn.close()
-            self.is_connected = True
-            logger.info("Successfully connected to MySQL database and verified schemas.")
-        except Exception as e:
-            self.is_connected = False
-            logger.warning(f"MySQL Database connection unavailable ({str(e)}). Running in in-memory session mode.")
-
-    def save_chat_message(
-        self,
-        session_id: str,
-        role: str,
-        content: str,
-        intent: str = "General",
-        confidence: float = 1.0,
-        tokens_generated: int = 0,
-        latency_ms: float = 0.0,
-    ) -> bool:
-        """Saves a chat message turn to MySQL database."""
-        if not self.is_connected:
-            return False
-
-        try:
-            conn = mysql.connector.connect(
+            self._pool = pooling.MySQLConnectionPool(
+                pool_name="genkit_mysql_pool",
+                pool_size=settings.MYSQL_MIN_POOL_SIZE,
+                pool_reset_session=True,
                 host=settings.MYSQL_HOST,
                 port=settings.MYSQL_PORT,
                 user=settings.MYSQL_USER,
                 password=settings.MYSQL_PASSWORD,
                 database=settings.MYSQL_DATABASE,
             )
-            cursor = conn.cursor()
-            query = """
-            INSERT INTO chat_messages (session_id, role, content, intent, confidence_score, tokens_generated, latency_ms)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (session_id, role, content, intent, confidence, tokens_generated, latency_ms))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return True
+
+            # Validate connection & apply tables
+            conn = self._pool.get_connection()
+            try:
+                cursor = conn.cursor()
+                for statement in MYSQL_SCHEMA.strip().split(";"):
+                    stmt = statement.strip()
+                    if stmt:
+                        cursor.execute(stmt)
+                conn.commit()
+                cursor.close()
+                logger.info(
+                    f"Successfully connected to MySQL database '{settings.MYSQL_DATABASE}' "
+                    f"at {settings.MYSQL_HOST}:{settings.MYSQL_PORT}"
+                )
+            finally:
+                conn.close()
+
         except Exception as e:
-            logger.error(f"Error saving chat message to MySQL: {str(e)}")
-            return False
-
-    def save_lead(
-        self,
-        session_id: str,
-        name: str,
-        email: str,
-        phone: Optional[str] = None,
-        service: Optional[str] = None,
-        budget: Optional[str] = None,
-        notes: Optional[str] = None,
-    ) -> bool:
-        """Saves a business lead to MySQL database."""
-        if not self.is_connected:
-            return False
-
-        try:
-            conn = mysql.connector.connect(
-                host=settings.MYSQL_HOST,
-                port=settings.MYSQL_PORT,
-                user=settings.MYSQL_USER,
-                password=settings.MYSQL_PASSWORD,
-                database=settings.MYSQL_DATABASE,
+            logger.error(f"Failed to initialize MySQL Connection Pool: {e}")
+            raise ConnectionError(
+                f"MySQL connection failed to {settings.MYSQL_HOST}:{settings.MYSQL_PORT} "
+                f"database '{settings.MYSQL_DATABASE}'. Error: {e}"
             )
+
+    def get_connection(self):
+        """Retrieves a healthy connection from the MySQL pool."""
+        if not self._pool:
+            self._init_mysql_pool()
+        return self._pool.get_connection()
+
+    def execute_write(self, query: str, params: Tuple[Any, ...] = ()) -> Optional[int]:
+        """Executes an INSERT / UPDATE / DELETE write query with parameterized inputs."""
+        conn = self.get_connection()
+        try:
             cursor = conn.cursor()
-            query = """
-            INSERT INTO leads (session_id, name, email, phone, service_interest, estimated_budget, notes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (session_id, name, email, phone or "", service or "", budget or "", notes or ""))
+            cursor.execute(query, params)
             conn.commit()
+            last_id = cursor.lastrowid
             cursor.close()
-            conn.close()
-            return True
+            return last_id
         except Exception as e:
-            logger.error(f"Error saving lead to MySQL: {str(e)}")
-            return False
+            logger.error(f"MySQL write operation failed: {e} | Query: {query} | Params: {params}")
+            raise e
+        finally:
+            conn.close()
 
-    def get_chat_history(self, session_id: str, limit: int = 10) -> List[Dict[str, Any]]:
-        """Retrieves session chat history from MySQL database."""
-        if not self.is_connected:
-            return []
-
+    def execute_read(self, query: str, params: Tuple[Any, ...] = ()) -> List[dict]:
+        """Executes a SELECT read query with parameterized inputs and returns dict rows."""
+        conn = self.get_connection()
         try:
-            conn = mysql.connector.connect(
-                host=settings.MYSQL_HOST,
-                port=settings.MYSQL_PORT,
-                user=settings.MYSQL_USER,
-                password=settings.MYSQL_PASSWORD,
-                database=settings.MYSQL_DATABASE,
-            )
             cursor = conn.cursor(dictionary=True)
-            query = """
-            SELECT role, content, intent, confidence_score, created_at
-            FROM chat_messages
-            WHERE session_id = %s
-            ORDER BY created_at ASC
-            LIMIT %s
-            """
-            cursor.execute(query, (session_id, limit))
+            cursor.execute(query, params)
             rows = cursor.fetchall()
             cursor.close()
-            conn.close()
             return rows
         except Exception as e:
-            logger.error(f"Error reading chat history from MySQL: {str(e)}")
-            return []
+            logger.error(f"MySQL read operation failed: {e} | Query: {query} | Params: {params}")
+            raise e
+        finally:
+            conn.close()
 
 
-db_pool = AsyncDatabasePool()
+# Instantiated Singleton Database Manager
+db_manager = DatabaseManager()

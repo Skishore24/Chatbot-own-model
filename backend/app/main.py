@@ -1,37 +1,36 @@
 """
 backend/app/main.py
 ----------------------------------------------------
-GENKIT AI v5.0 Enterprise FastAPI Application Server Entrypoint
+GENKIT AI v6.0 FastAPI Server Entrypoint
 """
 
 import sys
 import time
 from pathlib import Path
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
+import torch
 
-# Ensure backend directory is in sys.path for clean package imports
+# Ensure backend directory in sys.path
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import uvicorn
-
 from app.core.config import settings
 from app.core.logger import logger, new_trace_id
-from app.api.routes import router as api_router
+from app.api import api_v1_router
 
-# Instantiate Master FastAPI Application
+# Master FastAPI Application
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Enterprise-grade AI Assistant written natively in PyTorch and Python.",
+    description="Genkit AI — 100% Self-Hosted Custom LLM + Hybrid RAG Assistant.",
     docs_url="/docs",
     redoc_url="/redoc",
 )
 
-# Configure CORS Middleware
+# CORS Configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -41,7 +40,6 @@ app.add_middleware(
 )
 
 
-# Trace ID & Timing Middleware
 @app.middleware("http")
 async def add_telemetry_headers(request: Request, call_next):
     trace_id = new_trace_id()
@@ -53,31 +51,41 @@ async def add_telemetry_headers(request: Request, call_next):
     latency_ms = (time.time() - start_time) * 1000
     response.headers["X-Trace-ID"] = trace_id
     response.headers["X-Response-Time-MS"] = f"{latency_ms:.2f}"
-
     return response
 
 
-# Include API Router under /api/v5
-app.include_router(api_router)
+# Mount API Routers
+app.include_router(api_v1_router)
+# Also alias under /api/v5 for backward compatibility
+app.include_router(api_v1_router, prefix="/api/v5")
 
 
 @app.get("/")
 async def root():
+    cuda_status = torch.cuda.is_available()
+    device_name = torch.cuda.get_device_name(0) if cuda_status else "CPU"
     return {
         "app": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "operational",
+        "device": device_name,
+        "cuda_available": cuda_status,
+        "model_trained": settings.model_checkpoint_exists(),
+        "api_v1": "/api/v1",
         "docs": "/docs",
-        "api_v5": "/api/v5",
     }
 
 
 @app.get("/health")
-async def root_health():
-    from app.api.routes import health_check
-    return await health_check()
+async def health():
+    from app.api.health import get_health
+    return await get_health()
+
+
+def start_server():
+    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} on {settings.HOST}:{settings.PORT}")
+    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
 
 
 if __name__ == "__main__":
-    logger.info(f"Starting {settings.APP_NAME} server on {settings.HOST}:{settings.PORT}...")
-    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
+    start_server()
