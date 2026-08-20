@@ -135,6 +135,7 @@ Outputs `evaluation_report.json` and `evaluation_report.md` tracking in-domain r
 ## 📚 Technical Documentation
 
 Detailed technical documents are available in the [`docs/`](docs/) directory:
+- [Production Deployment Guide](docs/DEPLOYMENT.md)
 - [System Architecture](docs/ARCHITECTURE.md)
 - [Neural Model & Tokenizer Design](docs/MODEL.md)
 - [Hybrid RAG & Grounding Subsystem](docs/RAG.md)

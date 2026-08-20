@@ -45,10 +45,31 @@ class TestByteFallbackBPETokenizer(unittest.TestCase):
         decoded = self.tokenizer.decode(encoded)
         self.assertEqual(decoded.strip(), text.strip())
 
+    def test_vocab_bounding(self):
+        """Verify all encoded token IDs strictly adhere to vocab_size bound."""
+        test_inputs = [
+            "Genkit AI - Next-gen enterprise chatbot!",
+            "https://genkit.in/pricing?tier=enterprise#contact",
+            "Pricing starts at $500/mo with 99.9% SLA & 24/7 support.",
+            "வணக்கம்! Genkit AI உலகத்தரம் வாய்ந்த மென்பொருளை உருவாக்குகிறது.",
+            "Mixed: Hello 👋 12345 @user #hashtag https://genkit.in தமிழ்!",
+        ]
+        for s in test_inputs:
+            encoded = self.tokenizer.encode(s)
+            for tid in encoded:
+                self.assertGreaterEqual(tid, 0)
+                self.assertLess(tid, self.tokenizer.vocab_size, f"Token ID {tid} >= vocab_size {self.tokenizer.vocab_size}")
+            decoded = self.tokenizer.decode(encoded)
+            self.assertEqual(decoded, s)
+
     def test_empty_and_whitespace(self):
         """Verify empty and whitespace strings."""
         self.assertEqual(self.tokenizer.encode(""), [])
         self.assertEqual(self.tokenizer.decode([]), "")
+        ws = "   \n\t  "
+        enc_ws = self.tokenizer.encode(ws)
+        dec_ws = self.tokenizer.decode(enc_ws)
+        self.assertEqual(dec_ws, ws)
 
     def test_serialization(self):
         """Verify tokenizer save and load from disk."""
@@ -60,10 +81,14 @@ class TestByteFallbackBPETokenizer(unittest.TestCase):
             loaded_tokenizer = ByteFallbackBPETokenizer()
             loaded_tokenizer.load(temp_path)
 
-            test_str = "Testing tokenizer serialization roundtrip."
+            test_str = "Testing tokenizer serialization roundtrip with Tamil: வணக்கம் 🚀"
             self.assertEqual(
                 self.tokenizer.encode(test_str),
                 loaded_tokenizer.encode(test_str),
+            )
+            self.assertEqual(
+                self.tokenizer.decode(self.tokenizer.encode(test_str)),
+                loaded_tokenizer.decode(loaded_tokenizer.encode(test_str)),
             )
         finally:
             Path(temp_path).unlink(missing_ok=True)

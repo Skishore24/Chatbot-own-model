@@ -14,16 +14,31 @@ class StandardResponse(BaseModel):
     data: Optional[Dict[str, Any]] = None
 
 
+class ModelStatusInfo(BaseModel):
+    status: str
+    device: str
+    checkpoint_exists: bool
+    parameters: Optional[int] = None
+    vocab_size: Optional[int] = None
+
+
+class RagStatusInfo(BaseModel):
+    status: str
+    documents: int
+
+
+class DatabaseStatusInfo(BaseModel):
+    status: str
+    database: str
+
+
 class HealthResponse(BaseModel):
     status: str = "healthy"
-    app_name: str
+    application: str
     version: str
-    device: str
-    cuda_available: bool
-    model_loaded: bool
-    tokenizer_loaded: bool
-    database_status: str
-    rag_documents_indexed: int
+    model: ModelStatusInfo
+    rag: RagStatusInfo
+    database: DatabaseStatusInfo
 
 
 class ModelInfoResponse(BaseModel):

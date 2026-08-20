@@ -37,6 +37,11 @@ class HybridRAGPipeline:
         logger.info(f"Initialized HybridRAGPipeline with {len(self.chunks)} knowledge chunks.")
 
     @property
+    def validator(self) -> GroundingValidator:
+        """Alias for grounding validator."""
+        return self.grounding
+
+    @property
     def total_documents(self) -> int:
         return len(self.chunks)
 

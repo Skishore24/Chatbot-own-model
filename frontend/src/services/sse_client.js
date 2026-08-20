@@ -1,9 +1,13 @@
 /**
  * src/services/sse_client.js
  * ----------------------------------------------------
- * GENKIT AI v5.0 Enterprise Real-time SSE Token Stream Client
+ * GENKIT AI v6.0 Enterprise Real-time SSE Token Stream Client
  * Reads Server-Sent Events (text/event-stream) using native Fetch ReadableStream.
  */
+
+const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL.replace(/\/+$/, "")
+  : "";
 
 export async function streamChatResponse({
   message,
@@ -14,7 +18,7 @@ export async function streamChatResponse({
   onError,
 }) {
   try {
-    const response = await fetch("/api/v5/chat/stream", {
+    const response = await fetch(`${API_BASE}/api/v1/chat/stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

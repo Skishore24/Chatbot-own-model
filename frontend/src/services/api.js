@@ -2,7 +2,9 @@
 // Genkit AI API Service v6.0
 // ======================================================
 
-const API_BASE = "";
+const API_BASE = (typeof import.meta !== "undefined" && import.meta.env && import.meta.env.VITE_API_URL)
+  ? import.meta.env.VITE_API_URL.replace(/\/+$/, "")
+  : "";
 
 // ------------------------------------------------------
 // Session

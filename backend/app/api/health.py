@@ -8,9 +8,10 @@ from fastapi import APIRouter
 import torch
 
 from app.core.config import settings
-from app.schemas.common import HealthResponse, ModelInfoResponse
+from app.schemas.common import HealthResponse, ModelInfoResponse, ModelStatusInfo, RagStatusInfo, DatabaseStatusInfo
 from app.database.connection import db_manager
 from app.rag.pipeline import get_rag_pipeline
+from app.llm.inference import load_model_and_tokenizer, ModelStatus
 
 router = APIRouter(tags=["Health & System"])
 
@@ -20,18 +21,43 @@ async def get_health():
     """Returns operational health diagnostics of the Genkit AI system."""
     rag_pipe = get_rag_pipeline()
     cuda_avail = torch.cuda.is_available()
-    device_name = torch.cuda.get_device_name(0) if cuda_avail else "CPU"
+    device_name = "cuda" if cuda_avail else "cpu"
+
+    # Check model status
+    checkpoint_exists = settings.model_checkpoint_exists()
+    if not checkpoint_exists:
+        model_status_str = "not_trained"
+    else:
+        # Check loadability
+        _, _, _, status = load_model_and_tokenizer()
+        if status == ModelStatus.READY:
+            model_status_str = "ready"
+        elif status == ModelStatus.INCOMPATIBLE:
+            model_status_str = "incompatible"
+        else:
+            model_status_str = "not_trained"
+
+    db_status_str = "ready" if db_manager.is_available else "unavailable"
+    rag_status_str = "ready" if rag_pipe.total_documents > 0 else "empty"
 
     return HealthResponse(
         status="healthy",
-        app_name=settings.APP_NAME,
+        application=settings.APP_NAME,
         version=settings.APP_VERSION,
-        device=device_name,
-        cuda_available=cuda_avail,
-        model_loaded=settings.model_checkpoint_exists(),
-        tokenizer_loaded=settings.tokenizer_checkpoint_exists(),
-        database_status=f"connected (MySQL: {settings.MYSQL_DATABASE})",
-        rag_documents_indexed=rag_pipe.total_documents,
+        model=ModelStatusInfo(
+            status=model_status_str,
+            device=device_name,
+            checkpoint_exists=checkpoint_exists,
+            vocab_size=settings.VOCAB_SIZE,
+        ),
+        rag=RagStatusInfo(
+            status=rag_status_str,
+            documents=rag_pipe.total_documents,
+        ),
+        database=DatabaseStatusInfo(
+            status=db_status_str,
+            database=settings.MYSQL_DATABASE,
+        ),
     )
 
 

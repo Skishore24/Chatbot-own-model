@@ -24,7 +24,11 @@ class TestAPIEndpoints(unittest.TestCase):
 
         health_res = self.client.get("/api/v1/health")
         self.assertEqual(health_res.status_code, 200)
-        self.assertEqual(health_res.json()["status"], "healthy")
+        h_data = health_res.json()
+        self.assertEqual(h_data["status"], "healthy")
+        self.assertIn("model", h_data)
+        self.assertIn("rag", h_data)
+        self.assertIn("database", h_data)
 
     def test_model_info(self):
         """Test model info endpoint."""
@@ -41,6 +45,17 @@ class TestAPIEndpoints(unittest.TestCase):
         self.assertTrue(data["success"])
         self.assertTrue(data["grounded"])
         self.assertTrue(len(data["answer"]) > 5)
+
+    def test_chat_stream_endpoint(self):
+        """Test SSE streaming endpoint."""
+        payload = {"message": "What services does Genkit provide?", "session_id": "test_stream_1"}
+        res = self.client.post("/api/v1/chat/stream", json=payload)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("text/event-stream", res.headers.get("content-type", ""))
+        body = res.text
+        self.assertIn("data: ", body)
+        self.assertIn('"event": "start"', body)
+        self.assertIn('"event": "end"', body)
 
     def test_chat_out_of_domain(self):
         """Test out-of-domain chat query refusal."""

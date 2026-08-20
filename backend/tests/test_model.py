@@ -101,6 +101,45 @@ class TestEnterpriseGPTModel(unittest.TestCase):
                 diff = torch.max(torch.abs(step_logit - step_target)).item()
                 self.assertLess(diff, 1e-4, f"Step {idx} cached logit mismatch (diff={diff})")
 
+    def test_padding_mask_invariance(self):
+        """Verify that right-padding tokens with attention_mask does not affect real tokens."""
+        real_tokens = torch.tensor([[15, 25, 35, 45]], dtype=torch.long)
+        padded_tokens = torch.tensor([[15, 25, 35, 45, 0, 0, 0]], dtype=torch.long)
+        attention_mask = torch.tensor([[1, 1, 1, 1, 0, 0, 0]], dtype=torch.long)
+
+        with torch.inference_mode():
+            real_logits, _ = self.model(real_tokens, use_cache=False)
+            padded_logits, _ = self.model(padded_tokens, attention_mask=attention_mask, use_cache=False)
+
+            # Compare logits for real tokens (first 4 positions)
+            real_part_from_padded = padded_logits[:, :4, :]
+            diff = torch.max(torch.abs(real_logits - real_part_from_padded)).item()
+            self.assertLess(diff, 1e-4, f"Padding affected real-token logits: max diff={diff}")
+
+    def test_gptconfig_serialization(self):
+        """Verify GPTConfig serialization to dict, file, and load from file."""
+        import tempfile
+        from pathlib import Path
+
+        cfg_dict = self.config.to_dict()
+        self.assertIn("vocab_size", cfg_dict)
+        self.assertIn("n_layer", cfg_dict)
+
+        reloaded_cfg = GPTConfig.from_dict(cfg_dict)
+        self.assertEqual(reloaded_cfg.vocab_size, self.config.vocab_size)
+        self.assertEqual(reloaded_cfg.n_embd, self.config.n_embd)
+
+        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        try:
+            self.config.save_to_file(tmp_path)
+            from_file = GPTConfig.load_from_file(tmp_path)
+            self.assertEqual(from_file.vocab_size, self.config.vocab_size)
+            self.assertEqual(from_file.n_layer, self.config.n_layer)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+
 
 if __name__ == "__main__":
     unittest.main()
