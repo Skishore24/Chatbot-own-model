@@ -36,3 +36,12 @@ async def create_lead_endpoint(request: LeadCreateRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to record lead. Please contact us directly at support@genkit.in",
         )
+
+
+@router.get("/leads")
+async def get_leads_endpoint(limit: int = 100):
+    """Retrieves captured leads for administrative/dashboard viewing."""
+    leads = LeadRepository.get_leads(limit=limit)
+    return {"success": True, "count": len(leads), "leads": leads}
+
+

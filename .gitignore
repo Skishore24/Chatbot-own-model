@@ -45,3 +45,9 @@ backend/.env
 .idea/
 .DS_Store
 Thumbs.db
+
+# Testing & Caches
+.pytest_cache/
+backend/.pytest_cache/
+.coverage
+htmlcov/

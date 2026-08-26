@@ -31,12 +31,13 @@ GENKIT_CORE_KEYWORDS = {
     "django", "node", "nodejs", "mysql", "mongodb", "postgresql", "figma",
     "photoshop", "illustrator", "premiere", "effects", "aws", "cloud",
     # Pricing & Process
-    "price", "pricing", "cost", "quote", "rate", "rates", "package", "packages",
+    "pricing", "quote", "rate", "rates", "package", "packages",
     "budget", "hourly", "timeline", "turnaround", "process", "consultation",
     "hire", "contact", "email", "phone", "support", "revisions", "nda", "refund",
     # Conversational intent
     "build", "create", "offer", "provide", "portfolio", "projects", "case",
 }
+
 
 
 class GroundingValidator:
@@ -53,20 +54,22 @@ class GroundingValidator:
         if not query_tokens:
             return True
 
-        # Conversational greetings / short query check
-        if len(query_tokens) <= 3 and any(t in {"hi", "hello", "hey", "help", "who", "what"} for t in query_tokens):
+        # Conversational greetings only (not questions starting with what/who)
+        GREETINGS = {"hi", "hello", "hey", "hola", "namaste", "greetings", "sup"}
+        if len(query_tokens) <= 2 and any(t in GREETINGS for t in query_tokens):
             return True
 
-        # Check keyword matches
+        # Check keyword matches against domain vocabulary
         matches = [t for t in query_tokens if t in GENKIT_CORE_KEYWORDS]
         if len(matches) > 0:
             return True
 
         # High RAG retrieval confidence indicates domain match even with new vocabulary
-        if top_retrieval_score >= 2.5:
+        if top_retrieval_score >= 3.0:
             return True
 
         return False
+
 
     def compute_grounding_score(
         self, query: str, chunks: List[DocumentChunk], top_retrieval_score: float = 0.0

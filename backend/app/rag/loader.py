@@ -83,8 +83,22 @@ def _process_item(item: Any, source: str, prefix: str = "", idx: int = 0) -> Lis
         if not has_nested:
             # Flat key-value dict (e.g. company.json)
             for k, v in item.items():
-                if isinstance(v, str) and len(v.strip()) > 5:
-                    title = k.replace("_", " ").title()
+                title = k.replace("_", " ").title()
+                if isinstance(v, list) and all(isinstance(x, str) for x in v):
+                    body = ", ".join(v).strip()
+                    if body:
+                        chunks.append(
+                            DocumentChunk(
+                                id=f"{source}_{k}",
+                                source=source,
+                                category=source,
+                                title=title,
+                                text=f"{title}: {body}",
+                                keywords=extract_keywords(f"{title} {body}") + [k.lower(), title.lower()],
+                                priority=2 if k.lower() in ("founders", "mission", "vision", "services", "technologies") else 1,
+                            )
+                        )
+                elif isinstance(v, str) and len(v.strip()) > 3:
                     body = v.strip()
                     chunks.append(
                         DocumentChunk(
@@ -93,10 +107,11 @@ def _process_item(item: Any, source: str, prefix: str = "", idx: int = 0) -> Lis
                             category=source,
                             title=title,
                             text=f"{title}: {body}",
-                            keywords=extract_keywords(f"{title} {body}"),
-                            priority=1,
+                            keywords=extract_keywords(f"{title} {body}") + [k.lower(), title.lower()],
+                            priority=2 if k.lower() in ("mission", "vision", "operational_model", "tagline") else 1,
                         )
                     )
+
 
     elif isinstance(item, list):
         for sub_idx, sub_item in enumerate(item):
@@ -119,7 +134,7 @@ def _process_item(item: Any, source: str, prefix: str = "", idx: int = 0) -> Lis
 
 
 def load_domain_chunks() -> List[DocumentChunk]:
-    """Loads all knowledge files from backend/datasets/ and converts them to DocumentChunks."""
+    """Loads curated knowledge files from backend/datasets/ and converts them to DocumentChunks."""
     dataset_dir = settings.DATASET_DIR
     chunks: List[DocumentChunk] = []
 
@@ -127,7 +142,12 @@ def load_domain_chunks() -> List[DocumentChunk]:
         logger.warning(f"Dataset directory not found: {dataset_dir}")
         return chunks
 
-    for json_file in sorted(dataset_dir.glob("*.json")):
+    # Prioritize domain knowledge files, skipping raw instruction training corpus (dataset.json)
+    all_files = sorted(dataset_dir.glob("*.json"))
+    domain_files = [f for f in all_files if f.name.lower() not in ("dataset.json", "dataset_raw.json")]
+    target_files = domain_files if domain_files else all_files
+
+    for json_file in target_files:
         try:
             with open(json_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -141,3 +161,4 @@ def load_domain_chunks() -> List[DocumentChunk]:
 
     logger.info(f"Total knowledge base documents indexed: {len(chunks):,}")
     return chunks
+

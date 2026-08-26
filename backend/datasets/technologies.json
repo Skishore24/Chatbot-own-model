@@ -1,5 +1,10 @@
 {
+  "tech_stack_overview": {
+    "name": "Genkit Tech Stack Overview",
+    "description": "Genkit uses a comprehensive technology stack: React and HTML5/CSS3/JavaScript for frontend, Python (FastAPI, Django), Node.js, and Java for backend microservices, MySQL, MongoDB, and PostgreSQL for relational and NoSQL databases, and Figma, Photoshop, Illustrator, Premiere Pro, and After Effects for UI/UX and graphic design."
+  },
   "backend": [
+
     {
       "name": "Python",
       "description": "Primary language for AI pipelines, scraping scripts, and web services using FastAPI/Django."

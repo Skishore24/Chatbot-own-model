@@ -1,19 +1,19 @@
 # Genkit AI v6.0 Evaluation Benchmark Report
 
-**Date:** 2026-08-20 11:56:28
+**Date:** 2026-08-26 18:31:03
 
 - **Total Questions Evaluated:** 33
-- **In-Domain Retrieval Accuracy:** 96.4%
-- **Out-of-Domain Refusal Accuracy:** 80.0%
-- **Average Retrieval Latency:** 710.84 ms
+- **In-Domain Retrieval Accuracy:** 75.0%
+- **Out-of-Domain Refusal Accuracy:** 100.0%
+- **Average Retrieval Latency:** 1.20 ms
 
 ### Category Breakdown
 
-- **Company:** 100.0% (5 tests)
-- **Services:** 100.0% (7 tests)
-- **Technologies:** 80.0% (5 tests)
-- **Pricing:** 100.0% (3 tests)
+- **Company:** 80.0% (5 tests)
+- **Services:** 85.7% (7 tests)
+- **Technologies:** 60.0% (5 tests)
+- **Pricing:** 66.7% (3 tests)
 - **Process:** 100.0% (2 tests)
-- **Portfolio:** 100.0% (3 tests)
-- **Contact:** 100.0% (3 tests)
-- **OutOfDomain:** 80.0% (5 tests)
+- **Portfolio:** 66.7% (3 tests)
+- **Contact:** 66.7% (3 tests)
+- **OutOfDomain:** 100.0% (5 tests)

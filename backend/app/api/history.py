@@ -25,3 +25,11 @@ async def get_history_endpoint(session_id: str = Query(..., min_length=1, descri
         for r in rows
     ]
     return HistoryResponse(session_id=session_id, messages=messages)
+
+
+@router.get("/sessions")
+async def get_sessions_endpoint(limit: int = 50):
+    """Retrieves active chat sessions list for dashboard viewing."""
+    sessions = ChatRepository.get_all_sessions(limit=limit)
+    return {"success": True, "count": len(sessions), "sessions": sessions}
+

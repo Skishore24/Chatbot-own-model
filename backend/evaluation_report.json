@@ -1,18 +1,18 @@
 {
-  "timestamp": "2026-08-20 11:56:28",
+  "timestamp": "2026-08-26 18:31:03",
   "total_evaluated": 33,
-  "in_domain_retrieval_accuracy": "96.4%",
-  "out_of_domain_refusal_accuracy": "80.0%",
-  "average_retrieval_latency_ms": "710.84 ms",
+  "in_domain_retrieval_accuracy": "75.0%",
+  "out_of_domain_refusal_accuracy": "100.0%",
+  "average_retrieval_latency_ms": "1.20 ms",
   "categories": {
-    "Company": "100.0% (5 tests)",
-    "Services": "100.0% (7 tests)",
-    "Technologies": "80.0% (5 tests)",
-    "Pricing": "100.0% (3 tests)",
+    "Company": "80.0% (5 tests)",
+    "Services": "85.7% (7 tests)",
+    "Technologies": "60.0% (5 tests)",
+    "Pricing": "66.7% (3 tests)",
     "Process": "100.0% (2 tests)",
-    "Portfolio": "100.0% (3 tests)",
-    "Contact": "100.0% (3 tests)",
-    "OutOfDomain": "80.0% (5 tests)"
+    "Portfolio": "66.7% (3 tests)",
+    "Contact": "66.7% (3 tests)",
+    "OutOfDomain": "100.0% (5 tests)"
   },
   "results": [
     {
@@ -20,13 +20,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.848,
+      "confidence": 0.585,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\nwho is on the team",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\nexplain who is on the team",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\nwho is on the team details"
+        "Handle",
+        "Why should I choose Genkit?",
+        "What is Genkit's project development process?"
       ],
-      "latency_ms": 832.05,
+      "latency_ms": 1.62,
       "passed": true
     },
     {
@@ -34,13 +34,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.969,
+      "confidence": 0.955,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France now"
+        "What is Genkit's remote work setup?",
+        "What is Genkit's project development process?",
+        "Why should I choose Genkit?"
       ],
-      "latency_ms": 837.09,
+      "latency_ms": 1.41,
       "passed": true
     },
     {
@@ -48,13 +48,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.97,
+      "confidence": 0.64,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhere are you located",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhere are you located please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is where are you located"
+        "What is Genkit's project development process?",
+        "What is Genkit's remote work setup?",
+        "Handle"
       ],
-      "latency_ms": 939.95,
+      "latency_ms": 1.37,
       "passed": true
     },
     {
@@ -62,27 +62,27 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.846,
+      "confidence": 0.695,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is the capital of France now"
+        "What is Genkit's remote work setup?",
+        "What is Genkit's project development process?",
+        "Genkit Tech Stack Overview"
       ],
-      "latency_ms": 826.68,
-      "passed": true
+      "latency_ms": 1.46,
+      "passed": false
     },
     {
       "question": "Tell me about the founders of Genkit.",
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.971,
+      "confidence": 0.648,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\ntell me founders of genkit",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\ntell me founders of genkit please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: support\nEntities: support_policy: true\n\nContext:\nSupport: All projects include a standard post-delivery support period ranging from 7 to 90 days depending on the contract package.. Revisions: We offer unlimited revisions during the visual design phase (Figma wireframing). After coding starts, revisions must remain within the agreed project scope. Significant scope expansions will be quoted separately..\n\nHistory:\nNo previous history.\n\nQuestion:\ntell me founders of genkit options"
+        "Why should I choose Genkit?",
+        "How long does it take to build a custom MVP?",
+        "Karan"
       ],
-      "latency_ms": 831.06,
+      "latency_ms": 1.39,
       "passed": true
     },
     {
@@ -90,27 +90,27 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.883,
+      "confidence": 0.645,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does what is the capital of France",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does what is the capital of France details",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does what is the capital of France please"
+        "Services Knowledge",
+        "Services Knowledge",
+        "Services Knowledge"
       ],
-      "latency_ms": 815.49,
-      "passed": true
+      "latency_ms": 1.5,
+      "passed": false
     },
     {
       "question": "Does Genkit develop mobile apps?",
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.855,
+      "confidence": 0.743,
       "retrieved_chunks": [
         "Do you develop WordPress websites?",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Website Development\n\nContext:\nWebsite Development service: Custom websites, web applications, landing pages, and responsive portals built using modern, fast frameworks. Technologies: Python, FastAPI, Django, Node.js, Express, React, HTML5, CSS3, JavaScript. Benefits: Mobile responsive design, SEO optimized structure, Fast page speeds, Secure and scalable architecture. Turnaround: 3 to 6 weeks depending on complexity.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Website Development take",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Website Development\n\nContext:\nWebsite Development service: Custom websites, web applications, landing pages, and responsive portals built using modern, fast frameworks. Technologies: Python, FastAPI, Django, Node.js, Express, React, HTML5, CSS3, JavaScript. Benefits: Mobile responsive design, SEO optimized structure, Fast page speeds, Secure and scalable architecture. Turnaround: 3 to 6 weeks depending on complexity.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Website Development take please"
+        "Services Knowledge",
+        "Pricing Knowledge"
       ],
-      "latency_ms": 823.44,
+      "latency_ms": 1.35,
       "passed": true
     },
     {
@@ -118,13 +118,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.959,
+      "confidence": 0.758,
       "retrieved_chunks": [
-        "Can Genkit integrate AI models into existing portals?",
+        "How long does it take to build a custom MVP?",
         "Do you develop WordPress websites?",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Branding & Visual Identity\n\nContext:\nBranding & Visual Identity service: Complete brand creation including custom logos, color palettes, typography rules, and style guides. Technologies: Figma, Adobe Illustrator. Benefits: Memorable logos, Cohesive brand guidelines, Professional business card designs, Consistent customer touchpoints. Turnaround: 1 to 2 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\ncan you explain benefits of Branding & Visual Identity"
+        "Pricing Knowledge"
       ],
-      "latency_ms": 824.92,
+      "latency_ms": 1.43,
       "passed": true
     },
     {
@@ -132,13 +132,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.783,
+      "confidence": 0.759,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you offer Graphic Design",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you offer Graphic Design please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\nexplain do you offer Graphic Design"
+        "Services Knowledge",
+        "Figma",
+        "Services Knowledge"
       ],
-      "latency_ms": 856.1,
+      "latency_ms": 1.49,
       "passed": true
     },
     {
@@ -146,13 +146,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.832,
+      "confidence": 0.652,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Video Editing\n\nContext:\nVideo Editing service: Professional video post-production for YouTube content, marketing ads, social media reels, and short clips. Technologies: Adobe Premiere Pro, Adobe After Effects. Benefits: Dynamic transitions, Color grading & corrections, Audio leveling & royalty-free music, Professional subtitles/captions. Turnaround: 2 to 5 days per video.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Video Editing take",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Video Editing\n\nContext:\nVideo Editing service: Professional video post-production for YouTube content, marketing ads, social media reels, and short clips. Technologies: Adobe Premiere Pro, Adobe After Effects. Benefits: Dynamic transitions, Color grading & corrections, Audio leveling & royalty-free music, Professional subtitles/captions. Turnaround: 2 to 5 days per video.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Video Editing take details",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Video Editing\n\nContext:\nVideo Editing service: Professional video post-production for YouTube content, marketing ads, social media reels, and short clips. Technologies: Adobe Premiere Pro, Adobe After Effects. Benefits: Dynamic transitions, Color grading & corrections, Audio leveling & royalty-free music, Professional subtitles/captions. Turnaround: 2 to 5 days per video.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Video Editing take please"
+        "Rohan",
+        "Services Knowledge",
+        "Best For"
       ],
-      "latency_ms": 830.17,
+      "latency_ms": 1.45,
       "passed": true
     },
     {
@@ -160,13 +160,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.925,
+      "confidence": 0.689,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\ncan you explain Bitcoin",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\ncan you explain weather",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\ncan you explain gravity"
+        "Amit",
+        "Pricing Knowledge",
+        "Clients Knowledge"
       ],
-      "latency_ms": 825.52,
+      "latency_ms": 1.52,
       "passed": true
     },
     {
@@ -174,13 +174,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.883,
+      "confidence": 0.794,
       "retrieved_chunks": [
         "Do you develop WordPress websites?",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: Django\n\nContext:\nDjango is used for backend: Utilized for complex, database-heavy web applications with robust admin interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you use Django",
-        "Clients Knowledge"
+        "How long does it take to build a custom MVP?",
+        "Django"
       ],
-      "latency_ms": 846.27,
+      "latency_ms": 1.41,
       "passed": true
     },
     {
@@ -188,13 +188,13 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.777,
+      "confidence": 0.9,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: FastAPI\n\nContext:\nFastAPI is used for backend: Used for building modern, high-performance, and asynchronous APIs.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does do you use FastAPI",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: React\n\nContext:\nReact is used for frontend: Creates highly interactive, component-based single-page user interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does do you use React",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: React\n\nContext:\nReact is used for frontend: Creates highly interactive, component-based single-page user interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does do you use React now"
+        "Genkit Tech Stack Overview",
+        "Clients Knowledge",
+        "What is Genkit's project development process?"
       ],
-      "latency_ms": 857.6,
+      "latency_ms": 1.37,
       "passed": true
     },
     {
@@ -202,13 +202,13 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.931,
+      "confidence": 0.766,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: React\n\nContext:\nReact is used for frontend: Creates highly interactive, component-based single-page user interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you use React",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: React\n\nContext:\nReact is used for frontend: Creates highly interactive, component-based single-page user interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\nexplain do you use React",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: React\n\nContext:\nReact is used for frontend: Creates highly interactive, component-based single-page user interfaces.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you use React please"
+        "React",
+        "Sneha",
+        "Genkit Tech Stack Overview"
       ],
-      "latency_ms": 833.94,
+      "latency_ms": 1.37,
       "passed": true
     },
     {
@@ -226,27 +226,27 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.828,
+      "confidence": 0.721,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is do you offer Graphic Design",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is do you offer Graphic Design details",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Graphic Design\n\nContext:\nGraphic Design service: High-quality visual creatives for branding, marketing campaigns, thumbnails, flyers, and banners. Technologies: Adobe Photoshop, Adobe Illustrator, Figma. Benefits: Unique visual elements, Brand alignment, Source files included, Multi-format exports. Turnaround: 3 to 7 business days.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is do you offer Graphic Design please"
+        "Company Knowledge",
+        "Do you sign Non-Disclosure Agreements (NDAs)?",
+        "Services Knowledge"
       ],
-      "latency_ms": 836.21,
-      "passed": true
+      "latency_ms": 1.89,
+      "passed": false
     },
     {
       "question": "What databases does Genkit work with?",
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.95,
+      "confidence": 0.92,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: PostgreSQL\n\nContext:\nPostgreSQL is used for databases: Advanced open-source database with robust JSON querying and geometric data support.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does what is PostgreSQL used for",
         "What is Genkit's remote work setup?",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: technology\nEntities: technologies: PostgreSQL\n\nContext:\nPostgreSQL is used for databases: Advanced open-source database with robust JSON querying and geometric data support.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does what is PostgreSQL used for details"
+        "Details",
+        "Genkit Tech Stack Overview"
       ],
-      "latency_ms": 788.91,
+      "latency_ms": 1.44,
       "passed": true
     },
     {
@@ -254,13 +254,13 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.918,
+      "confidence": 0.737,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how much do you charge",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how much do you charge please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how much do you charge details"
+        "Challenge",
+        "How long does it take to build a custom MVP?",
+        "Why should I choose Genkit?"
       ],
-      "latency_ms": 829.74,
+      "latency_ms": 1.37,
       "passed": true
     },
     {
@@ -268,13 +268,13 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.808,
+      "confidence": 0.766,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is hourly rates",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is hourly rates now",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is hourly rates details"
+        "What is Genkit's project development process?",
+        "Services Knowledge",
+        "Pricing Knowledge"
       ],
-      "latency_ms": 856.52,
+      "latency_ms": 1.38,
       "passed": true
     },
     {
@@ -282,13 +282,13 @@
       "category": "Process",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.888,
+      "confidence": 1.0,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce now"
+        "What is Genkit's project development process?",
+        "Project",
+        "Project"
       ],
-      "latency_ms": 837.78,
+      "latency_ms": 1.37,
       "passed": true
     },
     {
@@ -296,13 +296,13 @@
       "category": "Process",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.804,
+      "confidence": 1.0,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Branding & Visual Identity\n\nContext:\nBranding & Visual Identity service: Complete brand creation including custom logos, color palettes, typography rules, and style guides. Technologies: Figma, Adobe Illustrator. Benefits: Memorable logos, Cohesive brand guidelines, Professional business card designs, Consistent customer touchpoints. Turnaround: 1 to 2 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Branding & Visual Identity take",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: Branding & Visual Identity\n\nContext:\nBranding & Visual Identity service: Complete brand creation including custom logos, color palettes, typography rules, and style guides. Technologies: Figma, Adobe Illustrator. Benefits: Memorable logos, Cohesive brand guidelines, Professional business card designs, Consistent customer touchpoints. Turnaround: 1 to 2 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does Branding & Visual Identity take details",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: AI & Chatbot Development\n\nContext:\nAI & Chatbot Development service: Development of intelligent AI agents, custom chatbots, and automated workflows using LLM architectures. Technologies: Python, PyTorch, scikit-learn, FastAPI, MySQL. Benefits: 24/7 automated support, Domain-specific knowledge retrieval, Reduced customer service load, Seamless API integrations. Turnaround: 4 to 8 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how long does AI & Chatbot Development take"
+        "How long does it take to build a custom MVP?",
+        "Feedback",
+        "Do you develop WordPress websites?"
       ],
-      "latency_ms": 822.82,
+      "latency_ms": 1.57,
       "passed": true
     },
     {
@@ -310,27 +310,27 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.822,
+      "confidence": 0.722,
       "retrieved_chunks": [
+        "Do you sign Non-Disclosure Agreements (NDAs)?",
         "Feedback",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you have instagram",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you have instagram please"
+        "Why should I choose Genkit?"
       ],
-      "latency_ms": 841.67,
-      "passed": true
+      "latency_ms": 1.43,
+      "passed": false
     },
     {
       "question": "What projects has Genkit delivered?",
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.823,
+      "confidence": 0.73,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: project\nEntities: project: E-Commerce\n\nContext:\nProject: E-Commerce. Category: Website Development. Description: A high-performance online storefront featuring product catalogs, automated billing, and secure payment integrations.. Technologies: React, Node.js, MySQL, HTML, CSS. Impact: Boosted online sales by 45% and reduced page load times under 1.5 seconds..\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is E-Commerce now"
+        "Karan",
+        "What is Genkit's project development process?",
+        "Standard"
       ],
-      "latency_ms": 852.63,
+      "latency_ms": 1.4,
       "passed": true
     },
     {
@@ -338,27 +338,27 @@
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.923,
+      "confidence": 0.717,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: portfolio\nEntities: portfolio: true\n\nContext:\nPhilosophy: We believe visual design should be clean, functional, and consistent. All designs incorporate user-centric micro-interactions and follow rigorous accessibility standards.. Case study: ShopSmart Brand Refresh & Web Platform.\n\nHistory:\nNo previous history.\n\nQuestion:\nshow me show me past projects",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: portfolio\nEntities: portfolio: true\n\nContext:\nPhilosophy: We believe visual design should be clean, functional, and consistent. All designs incorporate user-centric micro-interactions and follow rigorous accessibility standards.. Case study: ShopSmart Brand Refresh & Web Platform.\n\nHistory:\nNo previous history.\n\nQuestion:\nshow me show me past projects please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: portfolio\nEntities: portfolio: true\n\nContext:\nPhilosophy: We believe visual design should be clean, functional, and consistent. All designs incorporate user-centric micro-interactions and follow rigorous accessibility standards.. Case study: ShopSmart Brand Refresh & Web Platform.\n\nHistory:\nNo previous history.\n\nQuestion:\ncan you explain show me past projects"
+        "What is Genkit's remote work setup?",
+        "Do you sign Non-Disclosure Agreements (NDAs)?",
+        "Pricing Knowledge"
       ],
-      "latency_ms": 955.33,
-      "passed": true
+      "latency_ms": 1.85,
+      "passed": false
     },
     {
       "question": "Have you built enterprise AI chatbots before?",
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.77,
+      "confidence": 0.626,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: AI & Chatbot Development\n\nContext:\nAI & Chatbot Development service: Development of intelligent AI agents, custom chatbots, and automated workflows using LLM architectures. Technologies: Python, PyTorch, scikit-learn, FastAPI, MySQL. Benefits: 24/7 automated support, Domain-specific knowledge retrieval, Reduced customer service load, Seamless API integrations. Turnaround: 4 to 8 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you offer AI & Chatbot Development",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: AI & Chatbot Development\n\nContext:\nAI & Chatbot Development service: Development of intelligent AI agents, custom chatbots, and automated workflows using LLM architectures. Technologies: Python, PyTorch, scikit-learn, FastAPI, MySQL. Benefits: 24/7 automated support, Domain-specific knowledge retrieval, Reduced customer service load, Seamless API integrations. Turnaround: 4 to 8 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\ndo you offer AI & Chatbot Development please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: services\nEntities: services: AI & Chatbot Development\n\nContext:\nAI & Chatbot Development service: Development of intelligent AI agents, custom chatbots, and automated workflows using LLM architectures. Technologies: Python, PyTorch, scikit-learn, FastAPI, MySQL. Benefits: 24/7 automated support, Domain-specific knowledge retrieval, Reduced customer service load, Seamless API integrations. Turnaround: 4 to 8 weeks.\n\nHistory:\nNo previous history.\n\nQuestion:\nbenefits of AI & Chatbot Development"
+        "Feedback",
+        "Neha",
+        "LexiBot Legal Assistant"
       ],
-      "latency_ms": 823.68,
+      "latency_ms": 1.4,
       "passed": true
     },
     {
@@ -366,13 +366,13 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.971,
+      "confidence": 0.837,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how can i contact you",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how can i contact you please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how can i contact you now"
+        "Pricing Knowledge",
+        "Handle",
+        "How long does it take to build a custom MVP?"
       ],
-      "latency_ms": 803.35,
+      "latency_ms": 1.52,
       "passed": true
     },
     {
@@ -380,13 +380,13 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.861,
+      "confidence": 0.811,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is your email",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is your email details",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: contact\nEntities: contact_info: email\n\nContext:\nPrimary email: genkit.tech@gmail.com. Website: https://www.genkit.in. Channels: Email, Instagram, GitHub.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is what is your email options"
+        "Address",
+        "What is Genkit's remote work setup?",
+        "Type"
       ],
-      "latency_ms": 810.24,
+      "latency_ms": 1.39,
       "passed": true
     },
     {
@@ -394,14 +394,14 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.878,
+      "confidence": 0.668,
       "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow does how much do you charge for my business",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nhow much do you charge for my business",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: pricing\nEntities: pricing_signal: true\n\nContext:\nStarter landing page package starts at $500, business websites at $1500, e-commerce stores at $3000. Hourly web development rate is $45.\n\nHistory:\nNo previous history.\n\nQuestion:\nexplain how much do you charge for my business"
+        "Project",
+        "Project",
+        "Project"
       ],
-      "latency_ms": 808.84,
-      "passed": true
+      "latency_ms": 1.36,
+      "passed": false
     },
     {
       "question": "What is the capital of France?",
@@ -447,15 +447,11 @@
       "question": "What is the stock price of Tesla today?",
       "category": "OutOfDomain",
       "is_out_of_domain": true,
-      "grounded": true,
-      "confidence": 0.839,
-      "retrieved_chunks": [
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is stock market today",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is stock market today please",
-        "System: You are Genkit AI, the official AI assistant for Genkit digital solutions. Answer questions ONLY using the facts provided in the Context. If the context is insufficient, decline politely.\nIntent: out_of_domain\nEntities: None\n\nContext:\nNo context available.\n\nHistory:\nNo previous history.\n\nQuestion:\nwhat is stock market today now"
-      ],
-      "latency_ms": 809.67,
-      "passed": false
+      "grounded": false,
+      "confidence": 0.0,
+      "retrieved_chunks": [],
+      "latency_ms": 0.0,
+      "passed": true
     }
   ]
 }

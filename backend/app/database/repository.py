@@ -65,6 +65,43 @@ class ChatRepository:
         )
         return db_manager.execute_read(query, (session_id, limit))
 
+    @staticmethod
+    def get_all_sessions(limit: int = 50) -> List[dict]:
+        """Retrieves list of active chat sessions with message counts and last active times."""
+        query = (
+            "SELECT s.session_id, s.created_at, s.last_active, "
+            "(SELECT COUNT(*) FROM chat_messages m WHERE m.session_id = s.session_id) as message_count "
+            "FROM chat_sessions s ORDER BY s.last_active DESC LIMIT %s"
+        )
+        return db_manager.execute_read(query, (limit,))
+
+    @staticmethod
+    def get_analytics() -> dict:
+        """Computes high-level usage and performance metrics."""
+        msg_query = "SELECT COUNT(*) as total_messages, AVG(latency_ms) as avg_latency, AVG(confidence_score) as avg_confidence FROM chat_messages WHERE role = 'assistant'"
+        leads_query = "SELECT COUNT(*) as total_leads FROM leads"
+        sessions_query = "SELECT COUNT(*) as total_sessions FROM chat_sessions"
+
+        msg_stats = db_manager.execute_read(msg_query)
+        leads_stats = db_manager.execute_read(leads_query)
+        sessions_stats = db_manager.execute_read(sessions_query)
+
+        total_msgs = msg_stats[0]["total_messages"] if msg_stats else 0
+        avg_lat = round(float(msg_stats[0]["avg_latency"] or 0), 1) if msg_stats else 0.0
+        avg_conf = round(float(msg_stats[0]["avg_confidence"] or 0), 2) if msg_stats else 0.0
+        total_leads = leads_stats[0]["total_leads"] if leads_stats else 0
+        total_sessions = sessions_stats[0]["total_sessions"] if sessions_stats else 0
+
+        return {
+            "total_messages": total_msgs,
+            "total_sessions": total_sessions,
+            "total_leads": total_leads,
+            "avg_latency_ms": avg_lat,
+            "avg_confidence": avg_conf,
+            "database_engine": db_manager.engine_type,
+        }
+
+
 
 class LeadRepository:
     """Repository managing captured business leads in MySQL."""

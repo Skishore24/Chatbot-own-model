@@ -50,6 +50,10 @@ class HybridReranker:
 
         scored_chunks: List[Tuple[float, DocumentChunk]] = []
 
+        COMMON_STOPWORDS = {"genkit", "what", "how", "who", "tell", "about", "does", "you", "use", "the", "for", "with", "and", "can", "is", "where", "do", "we", "our", "your", "me"}
+        content_tokens = {t for t in query_tokens if t not in COMMON_STOPWORDS}
+        eval_tokens = content_tokens if content_tokens else query_tokens
+
         for idx, chunk in enumerate(chunks):
             # Reciprocal Rank Fusion component
             rrf_bm25 = 1.0 / (self.rrf_k + bm25_ranks[idx] + 1)
@@ -62,19 +66,22 @@ class HybridReranker:
             # Term coverage boost: fraction of query tokens present in chunk
             chunk_tokens = set(normalize_tokens(chunk.text + " " + chunk.title))
             coverage = len(query_tokens.intersection(chunk_tokens)) / max(len(query_tokens), 1)
+            content_coverage = len(eval_tokens.intersection(chunk_tokens)) / max(len(eval_tokens), 1)
 
-            # Title & Exact phrase boost
-            title_boost = 0.25 if any(t in chunk.title.lower() for t in query_tokens) else 0.0
-            phrase_boost = 0.20 if any(kw in query_str for kw in chunk.keywords) else 0.0
+            # Title & Exact phrase boost with content tokens
+            chunk_title_tokens = set(normalize_tokens(chunk.title))
+            title_boost = 0.40 if len(eval_tokens.intersection(chunk_title_tokens)) > 0 else 0.0
+            phrase_boost = 0.30 if any(kw in query_str for kw in chunk.keywords if kw not in COMMON_STOPWORDS) else 0.0
 
             # Priority multiplier
-            priority_mult = 1.0 + (0.05 * (chunk.priority - 1))
+            priority_mult = 1.0 + (0.10 * (chunk.priority - 1))
 
             # Final unified score
-            final_score = (linear_score * 0.40 + rrf_score * 40.0 + coverage * 0.35 + title_boost + phrase_boost) * priority_mult
+            final_score = (linear_score * 0.30 + rrf_score * 35.0 + content_coverage * 0.35 + coverage * 0.15 + title_boost + phrase_boost) * priority_mult
 
             chunk.score = float(final_score)
             scored_chunks.append((final_score, chunk))
+
 
         # Sort descending by score
         scored_chunks.sort(key=lambda x: x[0], reverse=True)

@@ -16,7 +16,12 @@
     "answer": "We are a fully remote agency with specialists based in India. We communicate via email, Slack, and Zoom to work seamlessly with clients globally."
   },
   {
-    "question": "Can Genkit integrate AI models into existing portals?",
-    "answer": "Absolutely. Neha and Vikram can deploy custom chatbot backends (like FastAPI + PyTorch) and connect them to your legacy portals via API integrations."
+    "question": "What is Genkit's project development process?",
+    "answer": "Genkit follows a 5-step development process: 1. Discovery & Requirements Analysis, 2. UI/UX Wireframing in Figma, 3. Agile Full-Stack Development with weekly sprints, 4. QA Testing & Code Review, and 5. Production Deployment with 24/7 post-launch support."
+  },
+  {
+    "question": "How long does it take to build a custom MVP?",
+    "answer": "Building a custom MVP typically takes 2 to 4 weeks depending on the complexity of features and integrations. We provide rapid turnaround while maintaining enterprise code quality."
   }
 ]
+

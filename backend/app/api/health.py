@@ -1,17 +1,19 @@
 """
 backend/app/api/health.py
 ----------------------------------------------------
-Health & Model diagnostic endpoints for Genkit AI V6.
+Health, Model & RAG diagnostic endpoints for Genkit AI V6.
 """
 
 from fastapi import APIRouter
+from typing import List, Dict, Any
 import torch
 
 from app.core.config import settings
 from app.schemas.common import HealthResponse, ModelInfoResponse, ModelStatusInfo, RagStatusInfo, DatabaseStatusInfo
 from app.database.connection import db_manager
+from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
-from app.llm.inference import load_model_and_tokenizer, ModelStatus
+from app.llm.inference import ModelStatus
 
 router = APIRouter(tags=["Health & System"])
 
@@ -19,17 +21,18 @@ router = APIRouter(tags=["Health & System"])
 @router.get("/health", response_model=HealthResponse)
 async def get_health():
     """Returns operational health diagnostics of the Genkit AI system."""
+    from app.api.chat import get_generation_engine_and_status
+
     rag_pipe = get_rag_pipeline()
     cuda_avail = torch.cuda.is_available()
     device_name = "cuda" if cuda_avail else "cpu"
 
-    # Check model status
     checkpoint_exists = settings.model_checkpoint_exists()
     if not checkpoint_exists:
         model_status_str = "not_trained"
     else:
-        # Check loadability
-        _, _, _, status = load_model_and_tokenizer()
+        # Use singleton status without re-loading checkpoint from disk
+        _, status = get_generation_engine_and_status()
         if status == ModelStatus.READY:
             model_status_str = "ready"
         elif status == ModelStatus.INCOMPATIBLE:
@@ -39,6 +42,8 @@ async def get_health():
 
     db_status_str = "ready" if db_manager.is_available else "unavailable"
     rag_status_str = "ready" if rag_pipe.total_documents > 0 else "empty"
+
+    db_name = f"{settings.MYSQL_DATABASE} ({db_manager.engine_type})"
 
     return HealthResponse(
         status="healthy",
@@ -56,7 +61,7 @@ async def get_health():
         ),
         database=DatabaseStatusInfo(
             status=db_status_str,
-            database=settings.MYSQL_DATABASE,
+            database=db_name,
         ),
     )
 
@@ -78,3 +83,28 @@ async def get_model_info():
         checkpoint_exists=settings.model_checkpoint_exists(),
         device=device_str,
     )
+
+
+@router.get("/analytics")
+async def get_analytics_endpoint():
+    """Returns live analytics metrics for the dashboard."""
+    return ChatRepository.get_analytics()
+
+
+@router.get("/rag/knowledge")
+async def get_knowledge_chunks():
+    """Returns list of indexed RAG knowledge chunks for dashboard inspection."""
+    rag_pipe = get_rag_pipeline()
+    return [
+        {
+            "id": c.id,
+            "source": c.source,
+            "category": c.category,
+            "title": c.title,
+            "text": c.text,
+            "keywords": c.keywords,
+            "priority": c.priority,
+        }
+        for c in rag_pipe.chunks
+    ]
+
