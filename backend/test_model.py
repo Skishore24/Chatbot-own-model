@@ -1,4 +1,11 @@
+import sys
 import torch
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 MODEL_PATH = "genkit-model/model_v6.pt"
 
@@ -9,7 +16,7 @@ try:
         weights_only=False
     )
 
-    print("\n✅ MODEL FILE LOADED SUCCESSFULLY")
+    print("\n[SUCCESS] MODEL FILE LOADED SUCCESSFULLY")
     print("Type:", type(checkpoint))
 
     if isinstance(checkpoint, dict):
@@ -18,7 +25,7 @@ try:
             print("-", key)
 
 except Exception as e:
-    print("\n❌ MODEL FILE FAILED TO LOAD")
+    print("\n[ERROR] MODEL FILE FAILED TO LOAD")
     print(type(e).__name__)
     print(e)
     

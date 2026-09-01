@@ -54,6 +54,16 @@ def main():
 
             if not is_grounded:
                 print(rag.get_refusal_answer())
+            elif status == "MODEL_READY" and engine.model is not None:
+                prompt = rag.build_prompt(clean_query, chunks)
+                try:
+                    llm_ans = engine.generate(prompt, max_new_tokens=settings.MAX_NEW_TOKENS)
+                    if llm_ans and len(llm_ans.strip()) > 5:
+                        print(llm_ans.strip())
+                    else:
+                        print(rag.synthesize_answer(clean_query, chunks))
+                except Exception:
+                    print(rag.synthesize_answer(clean_query, chunks))
             else:
                 answer = rag.synthesize_answer(clean_query, chunks)
                 print(answer)
