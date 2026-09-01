@@ -178,10 +178,10 @@ class EnterpriseTrainer:
             self.optimizer.step()
             self.optimizer.zero_grad()
 
-            logger.info(f"✓ Real-data smoke test passed! Initial loss: {loss.item():.4f}")
+            logger.info(f"[OK] Real-data smoke test passed! Initial loss: {loss.item():.4f}")
             return True
         except Exception as e:
-            logger.error(f"✗ Smoke test failed: {e}")
+            logger.error(f"[FAIL] Smoke test failed: {e}")
             raise e
 
     def train_epoch(
@@ -392,7 +392,7 @@ def train_pipeline(
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             trainer.save_checkpoint(epoch=epoch, val_loss=val_loss)
-            logger.info(f"★ Best model checkpoint verified & saved at epoch {epoch} (Val Loss: {val_loss:.4f})")
+            logger.info(f"[BEST] Best model checkpoint verified & saved at epoch {epoch} (Val Loss: {val_loss:.4f})")
 
     # 8. Save final config & verify final production checkpoint
     config.save_to_file(str(settings.CONFIG_CHECKPOINT_PATH))

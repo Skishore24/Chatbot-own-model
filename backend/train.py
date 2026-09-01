@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=settings.BATCH_SIZE, help="Micro-batch size (default: 4)")
     parser.add_argument("--accum-steps", type=int, default=settings.GRADIENT_ACCUMULATION_STEPS, help="Gradient accumulation steps (default: 8)")
     parser.add_argument("--block-size", type=int, default=settings.BLOCK_SIZE, help="Sequence block size (default: 512)")
-    parser.add_argument("--vocab-size", type=int, default=settings.VOCAB_SIZE, help="Vocabulary size (default: 10000)")
+    parser.add_argument("--vocab-size", type=int, default=settings.VOCAB_SIZE, help="Vocabulary size (default: 2084)")
     parser.add_argument("--lr", type=float, default=settings.LEARNING_RATE, help="Peak learning rate (default: 3e-4)")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu)")
     parser.add_argument("--retrain-tokenizer", action="store_true", help="Force retraining BPE tokenizer from scratch")

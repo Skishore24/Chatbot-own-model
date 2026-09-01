@@ -82,7 +82,7 @@ def _merge_word(word: Tuple[str, ...], pair: Tuple[str, str], merged_str: str) -
 class ByteFallbackBPETokenizer:
     """Byte-Fallback Byte-Pair Encoding (BPE) Tokenizer."""
 
-    def __init__(self, vocab_size: int = 10000):
+    def __init__(self, vocab_size: int = 2084):
         self.target_vocab_size = vocab_size
         self.encoder: Dict[str, int] = {}
         self.decoder: Dict[int, str] = {}

@@ -54,16 +54,21 @@ class CheckpointManager:
 
         config_dict = config.to_dict() if isinstance(config, GPTConfig) else config
 
+        timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
         payload: Dict[str, Any] = {
             "format_version": CHECKPOINT_FORMAT_VERSION,
-            "saved_at": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+            "model_version": "v6",
+            "saved_at": timestamp_str,
+            "created_at": timestamp_str,
             "timestamp": time.time(),
-            "model_version": "6.1.0",
             "vocab_size": vocab_size,
             "config": config_dict,
             "model_state_dict": model_state_dict,
             "training_metadata": training_metadata or {},
-            "tokenizer_metadata": tokenizer_metadata or {},
+            "tokenizer_metadata": tokenizer_metadata or {
+                "vocab_size": vocab_size,
+                "tokenizer_version": "v5",
+            },
         }
 
         try:
@@ -86,7 +91,7 @@ class CheckpointManager:
 
             # 4. Atomic replacement (on Windows, replace handles overwrite safely)
             os.replace(tmp_path, target_path)
-            logger.info(f"✓ Checkpoint safely and atomically persisted to: {target_path}")
+            logger.info(f"[OK] Checkpoint safely and atomically persisted to: {target_path}")
             return True
 
         except Exception as e:
@@ -95,7 +100,7 @@ class CheckpointManager:
                     tmp_path.unlink()
                 except Exception:
                     pass
-            logger.error(f"✗ Atomic checkpoint save failed: {e}")
+            logger.error(f"[FAIL] Atomic checkpoint save failed: {e}")
             raise e
 
     @staticmethod

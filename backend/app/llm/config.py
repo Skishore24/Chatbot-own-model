@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 
 @dataclass
 class GPTConfig:
-    vocab_size: int = 10000
+    vocab_size: int = 2084
     block_size: int = 512
     n_embd: int = 384
     n_layer: int = 6

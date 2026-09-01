@@ -79,6 +79,13 @@ def get_logger(name: str = "GenkitAI") -> logging.Logger:
     logger_inst.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
     logger_inst.propagate = False
 
+    # Ensure UTF-8 console output on Windows
+    if hasattr(sys.stdout, "reconfigure"):
+        try:
+            sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
     # Console Handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG if settings.DEBUG else logging.INFO)
