@@ -1,31 +1,29 @@
+# Production Docker Compose Configuration
 services:
-  # 1. MySQL Database Service
   mysql:
     image: mysql:8.0
-    container_name: genkit_mysql
-    restart: unless-stopped
+    container_name: genkit_mysql_prod
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-genkit_ai}
       MYSQL_USER: ${MYSQL_USER:-genkit_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-genkit_password}
-    ports:
-      - "3306:3306"
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_prod_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
+    # MySQL is NOT exposed publicly in production
 
-  # 2. Genkit AI FastAPI Backend
   backend:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: genkit_backend
-    restart: unless-stopped
+    container_name: genkit_backend_prod
+    restart: always
     depends_on:
       mysql:
         condition: service_healthy
@@ -36,14 +34,12 @@ services:
       - MYSQL_HOST=mysql
       - MYSQL_PORT=3306
       - MYSQL_USER=${MYSQL_USER:-genkit_user}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-genkit_password}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-genkit_ai}
-      - SECRET_KEY=${SECRET_KEY:-genkit-ai-v6-production-secret-key-32bytes}
-    ports:
-      - "8000:8000"
+      - SECRET_KEY=${SECRET_KEY}
     volumes:
-      - ./backend/datasets:/app/backend/datasets
-      - ./backend/genkit-model:/app/backend/genkit-model
+      - ./backend/datasets:/app/backend/datasets:ro
+      - ./backend/genkit-model:/app/backend/genkit-model:ro
       - ./backend/logs:/app/backend/logs
       - ./backend/reports:/app/backend/reports
     healthcheck:
@@ -52,20 +48,20 @@ services:
       timeout: 5s
       retries: 3
 
-  # 3. Production Frontend (Nginx multi-stage bundle)
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:8000}
-    container_name: genkit_frontend
-    restart: unless-stopped
+        - VITE_API_URL=${VITE_API_URL:-https://api.genkit.in}
+    container_name: genkit_frontend_prod
+    restart: always
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - backend
 
 volumes:
-  mysql_data:
+  mysql_prod_data:
     driver: local

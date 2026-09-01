@@ -2,6 +2,10 @@
 backend/app/api/health.py
 ----------------------------------------------------
 Health, Model & RAG diagnostic endpoints for Genkit AI V6.
+Accurately reports system health ('healthy' or 'degraded') based on:
+- Model readiness state (MODEL_READY, MODEL_INVALID, MODEL_INCOMPATIBLE, MODEL_NOT_FOUND)
+- Database connectivity state
+- RAG document index status
 """
 
 from fastapi import APIRouter
@@ -28,31 +32,37 @@ async def get_health():
     device_name = "cuda" if cuda_avail else "cpu"
 
     checkpoint_exists = settings.model_checkpoint_exists()
-    if not checkpoint_exists:
-        model_status_str = "not_trained"
-    else:
-        # Use singleton status without re-loading checkpoint from disk
-        _, status = get_generation_engine_and_status()
-        if status == ModelStatus.READY:
-            model_status_str = "ready"
-        elif status == ModelStatus.INCOMPATIBLE:
-            model_status_str = "incompatible"
-        else:
-            model_status_str = "not_trained"
+    _, status = get_generation_engine_and_status()
+
+    # Determine reason if not ready
+    reason = None
+    if status == ModelStatus.INVALID:
+        reason = "Checkpoint could not be loaded or is corrupted"
+    elif status == ModelStatus.NOT_FOUND or status == ModelStatus.NOT_TRAINED:
+        reason = "Checkpoint file not found on disk"
+    elif status == ModelStatus.INCOMPATIBLE:
+        reason = "Checkpoint architecture does not match configuration"
+    elif status == ModelStatus.ERROR:
+        reason = "Unexpected error while initializing model"
 
     db_status_str = "ready" if db_manager.is_available else "unavailable"
     rag_status_str = "ready" if rag_pipe.total_documents > 0 else "empty"
 
     db_name = f"{settings.MYSQL_DATABASE} ({db_manager.engine_type})"
 
+    # Overall system status: degraded if model is not READY or db is unavailable
+    overall_status = "healthy" if (status == ModelStatus.READY and db_manager.is_available) else "degraded"
+
     return HealthResponse(
-        status="healthy",
+        status=overall_status,
         application=settings.APP_NAME,
         version=settings.APP_VERSION,
         model=ModelStatusInfo(
-            status=model_status_str,
+            status=status,
             device=device_name,
             checkpoint_exists=checkpoint_exists,
+            checkpoint=settings.MODEL_CHECKPOINT_PATH.name if checkpoint_exists else None,
+            reason=reason,
             vocab_size=settings.VOCAB_SIZE,
         ),
         rag=RagStatusInfo(
@@ -72,7 +82,7 @@ async def get_model_info():
     device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
     return ModelInfoResponse(
-        model_name="Genkit Enterprise GPT v6.0",
+        model_name="Genkit Enterprise GPT v6.1",
         parameters=80_000_000,
         vocab_size=settings.VOCAB_SIZE,
         embed_dim=settings.EMBED_DIM,
@@ -107,4 +117,3 @@ async def get_knowledge_chunks():
         }
         for c in rag_pipe.chunks
     ]
-

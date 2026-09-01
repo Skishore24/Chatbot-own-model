@@ -1,92 +1,120 @@
-# Genkit AI v6.0 System Architecture
+# Genkit AI Architecture Specification (v6.1)
 
-## 1. High-Level Overview
+## High-Level System Diagram
 
-Genkit AI is a **100% self-hosted, custom enterprise language model and hybrid RAG system**. It operates with **zero external AI dependencies**, using a locally trained PyTorch neural model and an algorithmic lexical retrieval pipeline.
-
-```mermaid
-graph TD
-    Client[React Frontend / Chat Widget] -->|SSE Stream / REST| API[FastAPI Server :8000]
-    API --> Security[Security Guard & Rate Limiter]
-    Security --> RAG[Hybrid RAG Pipeline]
-    
-    subgraph "Hybrid RAG Engine"
-        RAG --> Inverted[Inverted Index]
-        Inverted --> BM25[BM25 Okapi]
-        Inverted --> TFIDF[TF-IDF Cosine Search]
-        BM25 --> Reranker[Reciprocal Rank Fusion RRF]
-        TFIDF --> Reranker
-        Reranker --> Grounding[Grounding & Refusal Validator]
-    end
-    
-    Grounding -->|In-Domain Verified Prompt| LLM[Custom Enterprise GPT Model]
-    Grounding -->|Out-of-Domain Query| Refusal[Strict Scope Refusal Message]
-    
-    subgraph "Neural LLM Runtime"
-        LLM --> Tokenizer[Byte-Fallback BPE Tokenizer]
-        LLM --> GPU[RTX 3050 6GB Laptop GPU / AMP]
-        LLM --> StreamGen[Real Token-by-Token Generator]
-    end
-    
-    StreamGen --> DB[(Database: MySQL + SQLite Fallback)]
-    Refusal --> DB
-    StreamGen -->|SSE Event Stream| Client
-    Refusal -->|SSE Event Stream| Client
+```
+User / Client Application
+        │ (HTTPS / SSE Stream)
+        ▼
+   Frontend (React + Vite SPA / Nginx)
+        │ (REST API / SSE Events)
+        ▼
+   FastAPI Gateway (Uvicorn / Middleware)
+   ├── Rate Limiting & Input Sanitization Guard
+   ├── Prompt Injection Scanner
+   └── Session Management
+        │
+        ▼
+   Chat Orchestrator & Execution Router
+        ├── 1. Hybrid RAG Pipeline (Deterministic)
+        │     ├── Inverted Index Lookup
+        │     ├── BM25 Keyword Scoring
+        │     ├── TF-IDF Vector Scoring
+        │     ├── Score Normalization & Fusion Reranking
+        │     └── Grounding Confidence Evaluator
+        │
+        ├── 2. Decision Gate
+        │     ├── [Low Confidence / Off-Topic] ──► Out-of-Domain Refusal (`response_mode="system"`)
+        │     ├── [Model Not Loaded / Degradation] ──► Verified Knowledge Direct (`response_mode="rag_direct"`)
+        │     └── [High Confidence & Model Ready] ──► Custom PyTorch LLM (`response_mode="llm_rag"`)
+        │
+        └── 3. Generation Engine & Inference Runtime
+              ├── Byte-Fallback BPE Tokenizer (Vocab: 2,084)
+              ├── EnterpriseGPTModel (RoPE, GQA, RMSNorm, KV-Cache)
+              ├── Autoregressive Sampling (Top-K, Nucleus Top-P, Repetition Penalty)
+              └── StreamDecoder (UTF-8 Multi-byte Safe Buffer)
+        │
+        ▼
+   Persistent Storage (MySQL 8.0 / SQLite Dual Fallback)
+   ├── `chat_sessions` (Session metadata)
+   ├── `chat_messages` (Audit log, intent, confidence, latency)
+   ├── `leads` (Business inquiries & contact form)
+   └── `feedback` (User satisfaction ratings)
 ```
 
 ---
 
-## 2. Directory & Component Layout
+## Model Lifecycle & Checkpoint Safety
+
+```
+Dataset Preparation (datasets/)
+        │
+        ▼
+Byte-Fallback BPE Tokenizer (Vocab: 2,084)
+        │
+        ▼
+GPU-Accelerated Trainer (CUDA + AMP + Cosine Warmup)
+        │
+        ├── Periodic Validation on Held-Out Split (Loss & Perplexity)
+        │
+        ▼
+CheckpointManager (`app/llm/checkpoint.py`)
+        │
+        ├── 1. Write payload to `model_v6.pt.tmp_<timestamp>`
+        ├── 2. Immediate `torch.load()` inspection & state_dict NaN/Inf scan
+        ├── 3. Architecture & vocab configuration verification
+        ├── 4. Backup existing checkpoint to `model_v6.pt.bak`
+        └── 5. Atomic OS file replacement to `model_v6.pt`
+```
+
+---
+
+## Execution Modes
+
+| Response Mode | Condition | Behavior |
+|---|---|---|
+| `system` | Query is out-of-domain (low confidence score < 0.25) | Emits formal domain scope refusal without hallucination. |
+| `llm_rag` | Query in-domain AND model state is `MODEL_READY` | Custom LLM generates autoregressive response conditioned on RAG context. |
+| `rag_direct` | Query in-domain BUT model state is `MODEL_NOT_FOUND` / `MODEL_INVALID` | Dynamically synthesizes authoritative answer directly from knowledge chunks. |
+
+---
+
+## Directory Layout
 
 ```
 Chatbot-own-model/
+├── README.md                     # Master project documentation
+├── ARCHITECTURE.md               # Architectural overview
+├── docker-compose.yml            # Standard multi-container orchestration
+├── docker-compose.dev.yml        # Development configuration with live reload
+├── docker-compose.prod.yml       # Production hardened deployment configuration
+│
 ├── backend/
 │   ├── app/
-│   │   ├── api/             # FastAPI Route Modules (/chat, /stream, /leads, /health)
-│   │   ├── core/            # Configuration, Logger, Security, Rate Limiter
-│   │   ├── database/        # MySQL Connection Pool & SQLite local fallback
-│   │   ├── llm/             # Custom PyTorch GPT (GQA, RoPE, RMSNorm, SwiGLU, Tokenizer)
-│   │   ├── rag/             # Lexical RAG (InvertedIndex, BM25, TF-IDF, Reranker, Grounding)
-│   │   ├── schemas/         # Pydantic Request & Response Data Models
-│   │   └── main.py          # Master FastAPI server entrypoint
-│   ├── datasets/            # Verified Genkit company knowledge (JSON)
-│   ├── genkit-model/        # Checkpoint directory (.pt, .json)
-│   ├── tests/               # Unit & Integration Tests (100% pass)
-│   ├── training/            # Dataset compilation, Tokenizer & Model training scripts
-│   ├── evaluate.py          # Benchmark evaluation CLI
-│   ├── predict.py           # Interactive CLI Chatbot
-│   ├── requirements.txt     # Backend dependencies
-│   └── train.py             # Model training CLI
+│   │   ├── api/                  # FastAPI routers (chat, streaming, health, leads, feedback)
+│   │   ├── core/                 # App configuration, security guard, structured logging
+│   │   ├── database/             # Dual MySQL/SQLite connection manager & repositories
+│   │   ├── llm/                  # PyTorch model, BPE tokenizer, CheckpointManager, inference engine
+│   │   ├── rag/                  # BM25, TF-IDF, Fusion reranker, grounding validator, chunk loader
+│   │   └── schemas/              # Pydantic request & response models
+│   ├── datasets/
+│   │   ├── raw/                  # Source domain knowledge JSON files
+│   │   ├── processed/            # Compiled instruction datasets
+│   │   └── evaluation/           # 52-question benchmark suite (test_questions.json)
+│   ├── genkit-model/             # Checkpoints (model_v6.pt, bpe_tokenizer_v5.json, config_v6.json)
+│   ├── scripts/
+│   │   ├── verify_checkpoint.py  # Standalone checkpoint validator
+│   │   └── evaluate.py           # Automated benchmark evaluation runner
+│   ├── tests/                    # 55 automated unit & integration tests
+│   ├── training/                 # Model trainer & dataset preparation pipeline
+│   ├── train.py                  # CLI training entrypoint
+│   └── main.py                   # FastAPI backend server entrypoint
+│
 ├── frontend/
-│   ├── src/                 # React + Vite Chatbot Widget
-│   │   ├── components/      # UI components (ChatWidget, LeadModal, etc.)
-│   │   ├── services/        # API client & SSE stream reader
-│   │   └── index.css        # Responsive dark/light styling
-│   ├── package.json
-│   └── vite.config.js
-└── docs/                    # Architectural & Technical Documentation
+│   ├── src/                      # React UI components, SSE stream client, CSS theme
+│   ├── Dockerfile                # Multi-stage production build (Node -> Nginx)
+│   └── package.json              # Frontend dependencies
+│
+├── nginx/                        # Nginx reverse proxy configuration
+└── docs/                         # Extended operational documentation
 ```
-
----
-
-## 3. Request Flow Lifecycle
-
-1. **User Message Submission**: The React client sends a `POST` request to `/api/v1/chat/stream` or `/api/v1/chat`.
-2. **Security & Input Guard**:
-   - Sliding-window rate limiting per client IP.
-   - Prompt injection pattern scanner.
-   - Input sanitization (null-byte and control character removal without stripping query semantics).
-3. **Hybrid RAG Retrieval**:
-   - Query tokenized and mapped against an in-memory `InvertedIndex`.
-   - **BM25 Okapi** scores term saturation.
-   - **TF-IDF with sublinear scaling** measures cosine similarity.
-   - **Hybrid Reranker** applies Reciprocal Rank Fusion (RRF), title match, and query-term coverage boost.
-4. **Grounding & Scope Validation**:
-   - `GroundingValidator` calculates domain overlap score.
-   - Out-of-domain queries (e.g. general trivia, politics, non-Genkit questions) are refused with the standard verified scope statement.
-5. **Autoregressive Generation**:
-   - Grounded context is packed into a structured prompt.
-   - Custom PyTorch model performs pre-filling on the prompt, then streams tokens step-by-step using cached key-value states.
-6. **Persistence & Streaming**:
-   - Messages are saved to the active session in SQLite/MySQL.
-   - SSE chunks are yielded in real-time to the frontend.

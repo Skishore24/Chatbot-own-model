@@ -25,7 +25,7 @@ class TestAPIEndpoints(unittest.TestCase):
         health_res = self.client.get("/api/v1/health")
         self.assertEqual(health_res.status_code, 200)
         h_data = health_res.json()
-        self.assertEqual(h_data["status"], "healthy")
+        self.assertIn(h_data["status"], ["healthy", "degraded"])
         self.assertIn("model", h_data)
         self.assertIn("rag", h_data)
         self.assertIn("database", h_data)

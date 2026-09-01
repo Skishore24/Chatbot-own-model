@@ -1,0 +1,57 @@
+# Development Docker Compose Configuration
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: genkit_mysql_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: genkit_ai
+      MYSQL_USER: genkit_user
+      MYSQL_PASSWORD: genkit_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data_dev:/var/lib/mysql
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: genkit_backend_dev
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=true
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=genkit_user
+      - MYSQL_PASSWORD=genkit_password
+      - MYSQL_DATABASE=genkit_ai
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    image: node:20-alpine
+    container_name: genkit_frontend_dev
+    restart: unless-stopped
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data_dev:
+    driver: local

@@ -5,7 +5,8 @@ Model loader, strict checkpoint verification, and inference runtime setup.
 Provides explicit ModelStatus states:
 - MODEL_LOADING
 - MODEL_READY
-- MODEL_NOT_TRAINED
+- MODEL_NOT_FOUND
+- MODEL_INVALID
 - MODEL_INCOMPATIBLE
 - MODEL_ERROR
 """
@@ -18,18 +19,23 @@ from app.core.config import settings
 from app.core.logger import logger
 from app.llm.config import GPTConfig
 from app.llm.model import EnterpriseGPTModel
-from app.llm.tokenizer import ByteFallbackBPETokenizer, default_tokenizer
+from app.llm.tokenizer import ByteFallbackBPETokenizer
+from app.llm.checkpoint import CheckpointManager
 
 
 class ModelStatus:
     LOADING = "MODEL_LOADING"
     READY = "MODEL_READY"
-    NOT_TRAINED = "MODEL_NOT_TRAINED"
+    NOT_FOUND = "MODEL_NOT_FOUND"
+    NOT_TRAINED = "MODEL_NOT_TRAINED"  # Alias for backward compatibility
+    INVALID = "MODEL_INVALID"
     INCOMPATIBLE = "MODEL_INCOMPATIBLE"
     ERROR = "MODEL_ERROR"
 
 
-NOT_TRAINED_MESSAGE = "Custom model is not trained yet. Please train/load a valid checkpoint."
+NOT_FOUND_MESSAGE = "Custom model checkpoint not found on disk. Please train the model."
+INVALID_MESSAGE = "Custom model checkpoint is corrupted or invalid."
+INCOMPATIBLE_MESSAGE = "Custom model checkpoint architecture does not match configuration."
 
 
 def get_inference_device() -> torch.device:
@@ -42,16 +48,18 @@ def get_inference_device() -> torch.device:
 def load_model_and_tokenizer(
     model_path: Optional[str] = None,
     tokenizer_path: Optional[str] = None,
+    config_path: Optional[str] = None,
     device: Optional[str] = None,
 ) -> Tuple[Optional[EnterpriseGPTModel], ByteFallbackBPETokenizer, Optional[GPTConfig], str]:
     """
-    Loads model and tokenizer checkpoints with strict configuration verification.
+    Loads model and tokenizer checkpoints with strict configuration and integrity verification.
     Returns: (model, tokenizer, config, model_status)
-    Never runs untrained random weights for generation.
+    Never runs untrained random weights or corrupted checkpoints for generation.
     """
     dev = torch.device(device) if device else get_inference_device()
     m_path = Path(model_path or settings.MODEL_CHECKPOINT_PATH)
     t_path = Path(tokenizer_path or settings.TOKENIZER_CHECKPOINT_PATH)
+    c_path = Path(config_path or settings.CONFIG_CHECKPOINT_PATH)
 
     # 1. Load Tokenizer
     tokenizer = ByteFallbackBPETokenizer(vocab_size=settings.VOCAB_SIZE)
@@ -66,35 +74,42 @@ def load_model_and_tokenizer(
 
     # 2. Check if model checkpoint exists
     if not m_path.exists():
-        logger.warning(
-            f"Model checkpoint not found at {m_path}. "
-            f"Status: {ModelStatus.NOT_TRAINED}. {NOT_TRAINED_MESSAGE}"
-        )
-        return None, tokenizer, None, ModelStatus.NOT_TRAINED
+        logger.warning(f"Model checkpoint not found at {m_path}. Status: {ModelStatus.NOT_FOUND}")
+        return None, tokenizer, None, ModelStatus.NOT_FOUND
 
-    # 3. Load & strictly validate model weights
+    # 3. Load Expected Configuration from config_v6.json if available
+    expected_config: Optional[GPTConfig] = None
+    if c_path.exists():
+        try:
+            expected_config = GPTConfig.load_from_file(str(c_path))
+        except Exception as e:
+            logger.warning(f"Could not load config file {c_path}: {e}")
+
+    # 4. Verify Checkpoint File Integrity before full load
+    is_valid, reason = CheckpointManager.verify_checkpoint(str(m_path), expected_config=expected_config)
+    if not is_valid:
+        if "corrupted" in reason.lower() or "zip" in reason.lower() or "failed" in reason.lower():
+            logger.error(f"MODEL_INVALID: Checkpoint is corrupted at {m_path}: {reason}")
+            return None, tokenizer, None, ModelStatus.INVALID
+        else:
+            logger.error(f"MODEL_INCOMPATIBLE: Checkpoint incompatibility at {m_path}: {reason}")
+            return None, tokenizer, None, ModelStatus.INCOMPATIBLE
+
+    # 5. Load and instantiate model
     try:
         checkpoint = torch.load(str(m_path), map_location=dev, weights_only=False)
 
-        # Extract configuration
-        if isinstance(checkpoint, dict) and "config" in checkpoint and checkpoint["config"] is not None:
-            saved_config = checkpoint["config"]
-            if isinstance(saved_config, dict):
-                config = GPTConfig.from_dict(saved_config)
-            elif isinstance(saved_config, GPTConfig):
-                config = saved_config
+        # Extract config
+        if isinstance(checkpoint, dict) and "config" in checkpoint and checkpoint["config"]:
+            raw_cfg = checkpoint["config"]
+            if isinstance(raw_cfg, dict):
+                config = GPTConfig.from_dict(raw_cfg)
+            elif isinstance(raw_cfg, GPTConfig):
+                config = raw_cfg
             else:
-                config = GPTConfig(
-                    vocab_size=tokenizer.vocab_size,
-                    block_size=settings.BLOCK_SIZE,
-                    n_embd=settings.EMBED_DIM,
-                    n_layer=settings.NUM_LAYERS,
-                    n_head=settings.NUM_HEADS,
-                    n_kv_head=settings.NUM_KV_HEADS,
-                    dropout=0.0,
-                    bias=settings.BIAS,
-                    rope_freq_base=settings.ROPE_FREQ_BASE,
-                )
+                config = expected_config or GPTConfig(vocab_size=tokenizer.vocab_size)
+        elif expected_config is not None:
+            config = expected_config
         else:
             config = GPTConfig(
                 vocab_size=tokenizer.vocab_size,
@@ -108,6 +123,13 @@ def load_model_and_tokenizer(
                 rope_freq_base=settings.ROPE_FREQ_BASE,
             )
 
+        # Verify tokenizer vocab matches config vocab
+        if tokenizer.vocab_size != config.vocab_size:
+            logger.error(
+                f"MODEL_INCOMPATIBLE: Tokenizer vocab ({tokenizer.vocab_size}) != Model config vocab ({config.vocab_size})"
+            )
+            return None, tokenizer, None, ModelStatus.INCOMPATIBLE
+
         model = EnterpriseGPTModel(config)
 
         # Extract state dict
@@ -116,9 +138,9 @@ def load_model_and_tokenizer(
         elif isinstance(checkpoint, dict) and any(k.startswith("tok_embeddings") or k.startswith("layers") for k in checkpoint.keys()):
             state_dict = checkpoint
         else:
-            raise ValueError("Checkpoint does not contain valid model weights.")
+            raise ValueError("Checkpoint missing valid model_state_dict.")
 
-        # Strict weight loading to guarantee architecture match
+        # Strict weight loading
         model.load_state_dict(state_dict, strict=True)
         model.to(dev)
         model.eval()
@@ -130,8 +152,5 @@ def load_model_and_tokenizer(
         return model, tokenizer, config, ModelStatus.READY
 
     except Exception as e:
-        logger.error(
-            f"MODEL_INCOMPATIBLE: checkpoint architecture does not match current configuration or corrupted at {m_path}: {e}. "
-            f"Status: {ModelStatus.INCOMPATIBLE}."
-        )
-        return None, tokenizer, None, ModelStatus.INCOMPATIBLE
+        logger.error(f"MODEL_ERROR: Unexpected error loading model at {m_path}: {e}")
+        return None, tokenizer, None, ModelStatus.ERROR

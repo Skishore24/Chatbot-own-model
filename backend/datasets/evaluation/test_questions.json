@@ -1,0 +1,314 @@
+[
+  {
+    "id": "eval_01",
+    "category": "Company Overview",
+    "question": "What is Genkit AI?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_02",
+    "category": "Company Overview",
+    "question": "When was Genkit founded?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_03",
+    "category": "Company Overview",
+    "question": "Where is Genkit located?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_04",
+    "category": "Company Overview",
+    "question": "What is Genkit's mission and core vision?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_05",
+    "category": "Services",
+    "question": "What services does Genkit offer?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_06",
+    "category": "Services",
+    "question": "Do you provide custom website development?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_07",
+    "category": "Services",
+    "question": "Can Genkit build custom AI chatbots and LLM systems?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_08",
+    "category": "Services",
+    "question": "What does your graphic design service include?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_09",
+    "category": "Services",
+    "question": "Do you offer SEO optimization services?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_10",
+    "category": "Services",
+    "question": "Can you edit marketing and YouTube videos?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_11",
+    "category": "Services",
+    "question": "What is the turnaround time for website development?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_12",
+    "category": "Pricing",
+    "question": "How much does a landing page cost?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_13",
+    "category": "Pricing",
+    "question": "What are your hourly rates?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_14",
+    "category": "Pricing",
+    "question": "What is the price of an E-Commerce website package?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_15",
+    "category": "Pricing",
+    "question": "How much does a custom AI agent development cost?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_16",
+    "category": "Pricing",
+    "question": "What is the starting price for a business website?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_17",
+    "category": "Pricing",
+    "question": "What payment terms and milestone structures do you accept?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_18",
+    "category": "Team",
+    "question": "Who are the founders of Genkit?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_19",
+    "category": "Team",
+    "question": "Tell me about Kishore Kumar.",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_20",
+    "category": "Team",
+    "question": "Who is Hari Krishna?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_21",
+    "category": "Team",
+    "question": "How large is the Genkit team?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_22",
+    "category": "Team",
+    "question": "Who leads UI/UX design at Genkit?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_23",
+    "category": "Technologies",
+    "question": "What frontend frameworks do you use?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_24",
+    "category": "Technologies",
+    "question": "What backend languages and databases do you support?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_25",
+    "category": "Technologies",
+    "question": "Do you use PyTorch for AI development?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_26",
+    "category": "Technologies",
+    "question": "What design tools does your team use?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_27",
+    "category": "Projects",
+    "question": "What projects has Genkit delivered?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_28",
+    "category": "Projects",
+    "question": "Tell me about the Healthcare Portal project.",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_29",
+    "category": "Projects",
+    "question": "Tell me about the FinTech Dashboard project.",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_30",
+    "category": "Portfolio",
+    "question": "Can I see case studies of your past work?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_31",
+    "category": "Clients",
+    "question": "What industries or clients do you work with?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_32",
+    "category": "Clients",
+    "question": "Do you work with global international clients?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_33",
+    "category": "Policies",
+    "question": "What is your refund policy?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_34",
+    "category": "Policies",
+    "question": "Who owns the intellectual property and source code of the project?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_35",
+    "category": "Policies",
+    "question": "Do you provide post-delivery maintenance and support?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_36",
+    "category": "Policies",
+    "question": "Do you sign Non-Disclosure Agreements (NDAs)?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_37",
+    "category": "Contact",
+    "question": "What is Genkit's contact email?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_38",
+    "category": "Contact",
+    "question": "How do I schedule a consultation call?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_39",
+    "category": "Contact",
+    "question": "What are your official social media handles?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_40",
+    "category": "Contact",
+    "question": "How fast do you respond to project inquiries?",
+    "expected_grounded": true
+  },
+  {
+    "id": "eval_41",
+    "category": "Unsupported",
+    "question": "What is the capital city of France?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_42",
+    "category": "Unsupported",
+    "question": "Who won the FIFA World Cup in 2022?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_43",
+    "category": "Unsupported",
+    "question": "Write a recipe for chocolate cake.",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_44",
+    "category": "Unsupported",
+    "question": "What is the current stock price of Apple?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_45",
+    "category": "Unsupported",
+    "question": "How do I fix a flat tire on a bicycle?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_46",
+    "category": "Unsupported",
+    "question": "Explain Albert Einstein's theory of general relativity.",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_47",
+    "category": "Unsupported",
+    "question": "Who was the first president of the United States?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_48",
+    "category": "Unsupported",
+    "question": "Translate 'Good morning' into Japanese.",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_49",
+    "category": "Unsupported",
+    "question": "What is the weather forecast for London tomorrow?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_50",
+    "category": "Unsupported",
+    "question": "Help me solve this calculus integral: int x^2 dx.",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_51",
+    "category": "Unsupported",
+    "question": "Which team won the Super Bowl last year?",
+    "expected_grounded": false
+  },
+  {
+    "id": "eval_52",
+    "category": "Unsupported",
+    "question": "What is the distance from the Earth to Mars?",
+    "expected_grounded": false
+  }
+]

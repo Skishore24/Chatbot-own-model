@@ -1,9 +1,9 @@
 """
 backend/app/rag/pipeline.py
 ----------------------------------------------------
-Unified Hybrid RAG Pipeline for Genkit AI V6.
+Unified Hybrid RAG Pipeline for Genkit AI V6.1.
 End-to-end execution:
-Dataset Ingestion -> Inverted Index -> BM25 + TF-IDF -> Hybrid Reranker -> Grounding Validator -> Structured Synthesis.
+Dataset Ingestion -> Inverted Index -> BM25 + TF-IDF -> Hybrid Reranker -> Grounding Validator -> Dynamic Knowledge Synthesis.
 """
 
 from typing import List, Optional, Tuple
@@ -72,147 +72,68 @@ class HybridRAGPipeline:
 
     def synthesize_answer(self, query: str, chunks: List[DocumentChunk]) -> str:
         """
-        Synthesizes a clean, authoritative, well-structured Markdown answer
-        directly from verified Genkit knowledge chunks.
+        Dynamically synthesizes a clean, authoritative Markdown answer
+        from retrieved verified Genkit knowledge chunks.
         """
         if not chunks:
             return self.get_refusal_answer()
 
-        q_lower = query.lower()
+        # Handle simple greetings if query is purely conversational greeting
+        q_clean = query.strip().lower()
+        if q_clean in {"hi", "hello", "hey", "good morning", "good evening", "greetings"}:
+            return (
+                "Hello! I am the **Genkit AI Assistant**.\n\n"
+                "I can help you explore our services, project pricing, technology stack, portfolio, "
+                "team, and company policies. How can I assist you today?"
+            )
+
+        # Synthesize dynamically from top retrieved chunks
         top_chunk = chunks[0]
 
-        # 1. General Services Inquiry
-        if any(w in q_lower for w in ["what service", "services offered", "services do you offer", "services provide", "what do you do", "what can you do", "all services", "service list"]):
-            return (
-                "**Genkit AI** offers 6 core digital & engineering services:\n\n"
-                "1. **Website Development**\n"
-                "   - Custom responsive websites, web applications, and landing pages.\n"
-                "   - *Tech:* Python, FastAPI, Django, React, Node.js, HTML5, CSS3, JavaScript.\n"
-                "   - *Turnaround:* 3 to 6 weeks.\n\n"
-                "2. **Graphic Design**\n"
-                "   - High-quality visual creatives, marketing banners, flyers, and thumbnails.\n"
-                "   - *Tech:* Adobe Photoshop, Illustrator, Figma.\n"
-                "   - *Turnaround:* 3 to 7 business days.\n\n"
-                "3. **Branding & Visual Identity**\n"
-                "   - Custom vector logos, brand guidelines, color palettes, and typography scales.\n"
-                "   - *Tech:* Figma, Adobe Illustrator.\n"
-                "   - *Turnaround:* 1 to 2 weeks.\n\n"
-                "4. **Video Editing**\n"
-                "   - Professional video post-production for YouTube, ads, and short-form reels.\n"
-                "   - *Tech:* Adobe Premiere Pro, After Effects.\n"
-                "   - *Turnaround:* 2 to 5 days per video.\n\n"
-                "5. **Search Engine Optimization (SEO)**\n"
-                "   - On-page & technical SEO to boost Google rankings and organic traffic.\n"
-                "   - *Tech:* Google Search Console, Google Analytics, Keyword Planner.\n"
-                "   - *Turnaround:* Ongoing monthly retainers.\n\n"
-                "6. **AI & Chatbot Development**\n"
-                "   - 100% self-hosted custom LLMs, RAG assistants, and workflow automations.\n"
-                "   - *Tech:* Python, PyTorch, FastAPI, MySQL.\n"
-                "   - *Turnaround:* 4 to 8 weeks.\n\n"
-                "💬 *Interested in a project? Reach out to us at [genkit.tech@gmail.com](mailto:genkit.tech@gmail.com) or book a free consultation at [genkit.in/contact](https://www.genkit.in/contact)!*"
-            )
+        # If the primary top chunk has high relevance and contains comprehensive text
+        if len(chunks) == 1 or top_chunk.score > 0.65:
+            text = top_chunk.text.strip()
+            # Clean Q: prefix if formatted as FAQ
+            if text.startswith("**Q:") or text.startswith("Q:"):
+                lines = text.split("\n", 1)
+                if len(lines) > 1:
+                    text = lines[1].strip()
+            return text
 
-        # 2. General Pricing Inquiry
-        if any(w in q_lower for w in ["pricing", "cost", "how much", "price", "packages", "rates", "package", "hourly rate"]):
-            if "hourly" in q_lower:
-                return (
-                    "**Genkit Hourly Rates:**\n\n"
-                    "- **Website Development:** $45/hr\n"
-                    "- **AI & Chatbot Development:** $65/hr\n"
-                    "- **Branding:** $40/hr\n"
-                    "- **UI/UX Design:** $35/hr\n"
-                    "- **SEO:** $35/hr\n"
-                    "- **Video Editing:** $30/hr\n\n"
-                    "We also provide fixed-price packages and custom project estimates. Reach out at [genkit.tech@gmail.com](mailto:genkit.tech@gmail.com) for a tailored proposal!"
-                )
-            elif "landing page" in q_lower:
-                return (
-                    "**Landing Page Package:**\n\n"
-                    "- **Starting Price:** $500 USD\n"
-                    "- **Timeline:** 5 to 10 business days\n"
-                    "- **Included Features:** 1 Custom Page, Responsive Mobile Layout, Basic SEO, Contact Form Integration, 7 Days Post-Delivery Support.\n\n"
-                    "To get started, email us at [genkit.tech@gmail.com](mailto:genkit.tech@gmail.com)."
-                )
-            elif "ecommerce" in q_lower or "e-commerce" in q_lower or "store" in q_lower:
-                return (
-                    "**E-Commerce Package:**\n\n"
-                    "- **Starting Price:** $3,000 USD\n"
-                    "- **Timeline:** 4 to 6 weeks\n"
-                    "- **Included Features:** Unlimited Product Listings, Shopping Cart & Checkout Flow, Secure Stripe/PayPal Integration, Inventory Dashboard, 60 Days Post-Delivery Support.\n\n"
-                    "Book a scoping call at [genkit.in/contact](https://www.genkit.in/contact)."
-                )
-            elif "ai" in q_lower or "bot" in q_lower:
-                return (
-                    "**Custom AI Agent Package:**\n\n"
-                    "- **Starting Price:** $4,500 USD\n"
-                    "- **Timeline:** 6 to 8 weeks\n"
-                    "- **Included Features:** Custom LLM Pipeline, RAG Document Search Engine, FastAPI Backend Integration, MySQL Database Integration, 90 Days Dedicated Technical Support.\n\n"
-                    "Contact our AI engineers at [genkit.tech@gmail.com](mailto:genkit.tech@gmail.com)."
-                )
-            else:
-                return (
-                    "**Genkit Project Packages & Pricing:**\n\n"
-                    "- **Landing Page Package:** Starts at $500 USD (5-10 days, 1 page, responsive, SEO, contact form).\n"
-                    "- **Business Website Package:** Starts at $1,500 USD (3-4 weeks, up to 5 pages, custom UI/UX, CMS/Blog, Google Analytics).\n"
-                    "- **E-Commerce Package:** Starts at $3,000 USD (4-6 weeks, shopping cart, checkout, payment gateway, inventory).\n"
-                    "- **Custom AI Agent Package:** Starts at $4,500 USD (6-8 weeks, custom LLM, RAG search engine, FastAPI, MySQL).\n\n"
-                    "💡 *For custom scopes or hourly work ($30-$65/hr), we provide personalized quotes. Visit [genkit.in/contact](https://www.genkit.in/contact) for a free 15-minute consultation.*"
-                )
+        # Multi-chunk synthesis: combine top relevant knowledge items cleanly
+        synthesized_parts = []
+        seen_texts = set()
 
-        # 3. Founders & Company Inquiry
-        if any(w in q_lower for w in ["founder", "founders", "who started", "who founded", "created by", "kishore", "hari"]):
-            return (
-                "**Genkit** was founded in **June 2024** by **Hari Krishna** and **Kishore Kumar**, along with core founding team members Dharani, Deepak, Rahul Vijay, Jithesh, Jaya Nithesh, and Dharanesh.\n\n"
-                "Genkit operates with a remote-first team of 10-15 digital specialists across India, providing high-quality digital products and custom AI solutions to businesses worldwide."
-            )
+        for chunk in chunks[:3]:
+            chunk_body = chunk.text.strip()
+            if chunk_body in seen_texts:
+                continue
+            seen_texts.add(chunk_body)
 
-        # 4. Tech Stack Inquiry
-        if any(w in q_lower for w in ["tech stack", "technology", "technologies", "frameworks", "tools", "what tech", "languages"]):
-            return (
-                "**Genkit Technology Stack:**\n\n"
-                "- **Frontend:** React, HTML5, CSS3, JavaScript, Tailwind CSS, Vite\n"
-                "- **Backend:** Python (FastAPI, Django), Node.js (Express), Java\n"
-                "- **Databases:** MySQL, MongoDB, PostgreSQL, SQLite\n"
-                "- **Creative & Design Tools:** Figma, Adobe Photoshop, Adobe Illustrator, Premiere Pro, After Effects\n"
-                "- **AI & ML:** PyTorch, Custom Transformer GPT Architectures, BM25 / TF-IDF Hybrid RAG"
-            )
+            # Strip leading Q: if present
+            if chunk_body.startswith("**Q:") or chunk_body.startswith("Q:"):
+                lines = chunk_body.split("\n", 1)
+                if len(lines) > 1:
+                    chunk_body = lines[1].strip()
 
-        # 5. Contact Inquiry
-        if any(w in q_lower for w in ["contact", "email us", "get in touch", "how to reach", "phone number", "how to contact", "reach out"]):
-            return (
-                "You can get in touch with **Genkit AI** through the following channels:\n\n"
-                "- ✉️ **Email:** [genkit.tech@gmail.com](mailto:genkit.tech@gmail.com)\n"
-                "- 🌐 **Website:** [https://www.genkit.in](https://www.genkit.in)\n"
-                "- 📝 **Contact Form:** [genkit.in/contact](https://www.genkit.in/contact)\n"
-                "- 📸 **Instagram:** [@genkit.in](https://instagram.com/genkit.in)\n"
-                "- 💻 **GitHub:** [github.com/genkit](https://github.com/genkit)\n\n"
-                "⏱️ *We typically respond within 24 business hours. Free 15-minute scoping calls can be booked directly on our website.*"
-            )
+            synthesized_parts.append(chunk_body)
 
-        # 6. Specific Domain / Project / Policy Answer from Top Chunks
-        primary_text = top_chunk.text.strip()
-        # Clean up any potential markdown question prefix if present
-        if primary_text.startswith("**Q:") or primary_text.startswith("Q:"):
-            lines = primary_text.split("\n", 1)
-            if len(lines) > 1:
-                primary_text = lines[1].strip()
+        if not synthesized_parts:
+            return top_chunk.text.strip()
 
-        return primary_text
+        return "\n\n---\n\n".join(synthesized_parts)
 
     def build_prompt(self, query: str, chunks: List[DocumentChunk]) -> str:
         """
-        Builds internal structured prompt with system instructions and retrieved context.
+        Builds structured internal prompt with system instructions and retrieved context for LLM generation.
         """
         context_text = "\n\n".join([f"[{c.title}]\n{c.text}" for c in chunks]) if chunks else "No relevant context found."
 
         prompt = (
             "SYSTEM:\n"
             "You are Genkit AI, an enterprise AI assistant for Genkit.in.\n"
-            "RULES:\n"
-            "- Answer using only the verified Genkit knowledge provided in CONTEXT.\n"
-            "- If the question cannot be answered from the context, state that you don't have verified info.\n"
-            "- Do not invent company facts, pricing, or team members.\n"
-            "- Be concise, professional, and helpful.\n\n"
+            "Use only verified knowledge in CONTEXT to answer the QUESTION.\n"
+            "Be concise, professional, and directly helpful.\n\n"
             f"CONTEXT:\n{context_text}\n\n"
             f"QUESTION:\n{query}\n\n"
             "ANSWER:\n"

@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--vocab-size", type=int, default=settings.VOCAB_SIZE, help="Vocabulary size (default: 10000)")
     parser.add_argument("--lr", type=float, default=settings.LEARNING_RATE, help="Peak learning rate (default: 3e-4)")
     parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu)")
+    parser.add_argument("--retrain-tokenizer", action="store_true", help="Force retraining BPE tokenizer from scratch")
     args = parser.parse_args()
 
     train_pipeline(
@@ -35,6 +36,7 @@ def main():
         vocab_size=args.vocab_size,
         lr=args.lr,
         device=args.device,
+        retrain_tokenizer=args.retrain_tokenizer,
     )
 
 

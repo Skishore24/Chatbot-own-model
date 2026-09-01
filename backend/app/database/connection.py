@@ -120,6 +120,19 @@ class DatabaseManager:
 
         return q
 
+    def _get_sqlite_connection(self) -> sqlite3.Connection:
+        """Opens thread-safe SQLite connection and ensures schema tables exist."""
+        self._sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(self._sqlite_path), check_same_thread=False, timeout=10.0)
+        try:
+            cursor = conn.cursor()
+            cursor.executescript(SQLITE_SCHEMA)
+            conn.commit()
+            cursor.close()
+        except Exception:
+            pass
+        return conn
+
     def execute_write(self, query: str, params: Tuple[Any, ...] = ()) -> Optional[int]:
         """Executes an INSERT / UPDATE / DELETE write query across MySQL or SQLite."""
         if not self._initialized:
@@ -144,7 +157,7 @@ class DatabaseManager:
         # SQLite execution
         try:
             with self._lock:
-                conn = sqlite3.connect(str(self._sqlite_path), check_same_thread=False, timeout=10.0)
+                conn = self._get_sqlite_connection()
                 try:
                     sqlite_query = self._convert_query_for_sqlite(query)
                     cursor = conn.cursor()
@@ -182,7 +195,7 @@ class DatabaseManager:
         # SQLite execution
         try:
             with self._lock:
-                conn = sqlite3.connect(str(self._sqlite_path), check_same_thread=False, timeout=10.0)
+                conn = self._get_sqlite_connection()
                 conn.row_factory = sqlite3.Row
                 try:
                     sqlite_query = self._convert_query_for_sqlite(query)

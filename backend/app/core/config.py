@@ -88,7 +88,7 @@ class AppSettings(BaseSettings):
 
     # Custom LLM v6.0 Architecture Hyperparameters (Optimized for RTX 3050 6GB GPU)
     # Model size: ~75M-85M parameters
-    VOCAB_SIZE: int = Field(default=10000, description="Byte-Fallback BPE Vocab Size")
+    VOCAB_SIZE: int = Field(default=2084, description="Byte-Fallback BPE Vocab Size (synchronized with config_v6.json)")
     BLOCK_SIZE: int = Field(default=512, description="Max sequence context window")
     EMBED_DIM: int = Field(default=384, description="Hidden dimension d_model")
     NUM_LAYERS: int = Field(default=6, description="Transformer Decoder Layers")

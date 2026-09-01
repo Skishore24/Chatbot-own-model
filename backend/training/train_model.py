@@ -2,13 +2,14 @@
 backend/training/train_model.py
 ----------------------------------------------------
 Production PyTorch Model Trainer for Genkit AI V6.1.
-- Hardware-accelerated training (NVIDIA RTX 3050 / CUDA / AMP)
-- Train / Validation Split (90/10) with validation loss tracking
+- Hardware-accelerated training (NVIDIA CUDA / AMP / RTX 3050)
+- Train / Validation Split (90/10) with validation loss & perplexity tracking
 - Attention Mask support for padding tokens
 - Real-data pre-training smoke test
 - AdamW + Cosine Warmup Learning Rate Scheduler
 - Gradient Clipping & Accumulation
-- Checkpoint persistence (model.pt, tokenizer.json, config.json)
+- CheckpointManager atomic persistence and immediate torch.load verification
+- Comprehensive training report generation (reports/training_report.json)
 """
 
 import os
@@ -19,7 +20,7 @@ import time
 import random
 import argparse
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 if str(BACKEND_DIR) not in sys.path:
@@ -34,6 +35,7 @@ from app.core.logger import logger
 from app.llm.config import GPTConfig
 from app.llm.model import EnterpriseGPTModel
 from app.llm.tokenizer import ByteFallbackBPETokenizer
+from app.llm.checkpoint import CheckpointManager
 from training.prepare import build_instruction_corpus
 from training.train_tokenizer import train_tokenizer
 
@@ -113,7 +115,7 @@ class CosineWarmupScheduler:
 # 3. ENTERPRISE MODEL TRAINER
 # ==============================================================================
 class EnterpriseTrainer:
-    """Hardware-accelerated PyTorch Trainer with validation tracking and real-data smoke test."""
+    """Hardware-accelerated PyTorch Trainer with atomic checkpoint verification."""
 
     def __init__(
         self,
@@ -154,7 +156,7 @@ class EnterpriseTrainer:
         self.criterion = nn.CrossEntropyLoss(ignore_index=self.tokenizer.pad_id)
 
     def run_real_smoke_test(self, sample_batch: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> bool:
-        """Verifies full training step with real tokenized dataset sample."""
+        """Verifies full forward + backward training step with real tokenized dataset sample."""
         logger.info("Executing Pre-Training Real-Data Smoke Test...")
         try:
             self.model.train()
@@ -251,18 +253,31 @@ class EnterpriseTrainer:
         val_perplexity = math.exp(min(avg_val_loss, 20.0))
         return avg_val_loss, val_perplexity
 
-    def save_checkpoint(self, filepath: Optional[str] = None) -> None:
-        """Saves model weights, config, and state dict."""
+    def save_checkpoint(
+        self,
+        filepath: Optional[str] = None,
+        epoch: Optional[int] = None,
+        val_loss: Optional[float] = None,
+    ) -> bool:
+        """Saves model checkpoint safely via CheckpointManager."""
         save_path = filepath or str(settings.MODEL_CHECKPOINT_PATH)
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-        checkpoint = {
-            "model_state_dict": self.model.state_dict(),
-            "config": self.config.to_dict(),
+        training_meta = {
+            "epoch": epoch,
+            "val_loss": val_loss,
+            "device": str(self.device),
+        }
+        tokenizer_meta = {
             "vocab_size": self.tokenizer.vocab_size,
         }
-        torch.save(checkpoint, save_path)
-        logger.info(f"Saved model checkpoint to: {save_path}")
+
+        return CheckpointManager.save_atomic(
+            filepath=save_path,
+            model_state_dict=self.model.state_dict(),
+            config=self.config,
+            vocab_size=self.tokenizer.vocab_size,
+            training_metadata=training_meta,
+            tokenizer_metadata=tokenizer_meta,
+        )
 
 
 # ==============================================================================
@@ -273,36 +288,43 @@ def train_pipeline(
     batch_size: int = 4,
     accum_steps: int = 8,
     block_size: int = 512,
-    vocab_size: int = 10000,
+    vocab_size: int = 2084,
     lr: float = 3e-4,
     device: Optional[str] = None,
-):
+    retrain_tokenizer: bool = False,
+) -> Dict[str, Any]:
+    start_train_time = time.time()
     logger.info("=" * 70)
     logger.info("GENKIT AI v6.1 — ENTERPRISE MODEL TRAINING PIPELINE")
     logger.info("=" * 70)
 
-    # 1. Corpus Preparation
+    # 1. Corpus Preparation & Validation
     corpus = build_instruction_corpus()
     if not corpus:
         logger.error("No training data found! Check backend/datasets/")
         sys.exit(1)
+    logger.info(f"Loaded training corpus with {len(corpus):,} instruction pairs")
 
-    # 2. Tokenizer Training
-    logger.info("Training Byte-Fallback BPE Tokenizer...")
+    # 2. Tokenizer Loading or Training
     tokenizer = ByteFallbackBPETokenizer(vocab_size=vocab_size)
-    tokenizer.train_on_corpus(corpus, target_vocab_size=vocab_size)
-    tokenizer.save(str(settings.TOKENIZER_CHECKPOINT_PATH))
-    logger.info(f"Tokenizer saved: {settings.TOKENIZER_CHECKPOINT_PATH} (Vocab: {tokenizer.vocab_size:,})")
+    if settings.tokenizer_checkpoint_exists() and not retrain_tokenizer:
+        tokenizer.load(str(settings.TOKENIZER_CHECKPOINT_PATH))
+        logger.info(f"Loaded existing Tokenizer: {settings.TOKENIZER_CHECKPOINT_PATH} (Vocab: {tokenizer.vocab_size:,})")
+    else:
+        logger.info("Training Byte-Fallback BPE Tokenizer...")
+        tokenizer.train_on_corpus(corpus, target_vocab_size=vocab_size)
+        tokenizer.save(str(settings.TOKENIZER_CHECKPOINT_PATH))
+        logger.info(f"Tokenizer saved: {settings.TOKENIZER_CHECKPOINT_PATH} (Vocab: {tokenizer.vocab_size:,})")
 
-    # 3. Token Encoding & Deduplication
-    logger.info("Encoding sequences...")
+    # 3. Token Encoding & Dataset Preparation
+    logger.info("Encoding instruction sequences...")
     encoded_sequences = []
     for text in corpus:
         ids = tokenizer.encode(text, add_special_tokens=True)
         if len(ids) > 4:
             encoded_sequences.append(ids)
 
-    logger.info(f"Encoded {len(encoded_sequences):,} total sequences")
+    logger.info(f"Encoded {len(encoded_sequences):,} total valid sequences")
     random.shuffle(encoded_sequences)
 
     # 4. 90/10 Train / Validation Split
@@ -333,7 +355,8 @@ def train_pipeline(
     )
 
     model = EnterpriseGPTModel(config)
-    logger.info(f"Model parameters: {model.count_parameters():,}")
+    param_count = model.count_parameters()
+    logger.info(f"Model architecture initialized: {param_count:,} parameters")
 
     trainer = EnterpriseTrainer(model, tokenizer, config, lr=lr, device=device)
 
@@ -341,7 +364,7 @@ def train_pipeline(
     sample_batch = next(iter(train_loader))
     trainer.run_real_smoke_test(sample_batch)
 
-    # 7. Training Loop
+    # 7. Training Loop with Periodic Verification
     total_steps = len(train_loader) * epochs
     scheduler = CosineWarmupScheduler(
         trainer.optimizer,
@@ -352,24 +375,88 @@ def train_pipeline(
     )
 
     best_val_loss = float("inf")
+    epoch_logs = []
 
     for epoch in range(1, epochs + 1):
         train_loss = trainer.train_epoch(train_loader, scheduler, epoch, grad_accum_steps=accum_steps)
         val_loss, val_ppl = trainer.evaluate(val_loader)
-        logger.info(f"Epoch [{epoch}] Validation Loss: {val_loss:.4f} | Perplexity: {val_ppl:.2f}")
+        logger.info(f"Epoch [{epoch}/{epochs}] Val Loss: {val_loss:.4f} | Perplexity: {val_ppl:.2f}")
+
+        epoch_logs.append({
+            "epoch": epoch,
+            "train_loss": round(train_loss, 4),
+            "val_loss": round(val_loss, 4),
+            "val_perplexity": round(val_ppl, 2),
+        })
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            trainer.save_checkpoint()
-            logger.info(f"★ Best model updated at epoch {epoch} (Val Loss: {val_loss:.4f})")
+            trainer.save_checkpoint(epoch=epoch, val_loss=val_loss)
+            logger.info(f"★ Best model checkpoint verified & saved at epoch {epoch} (Val Loss: {val_loss:.4f})")
 
-    # Save final config
+    # 8. Save final config & verify final production checkpoint
     config.save_to_file(str(settings.CONFIG_CHECKPOINT_PATH))
+    is_valid, verify_status = CheckpointManager.verify_checkpoint(str(settings.MODEL_CHECKPOINT_PATH))
+
+    if not is_valid:
+        raise RuntimeError(f"Final checkpoint verification failed: {verify_status}")
+
+    total_training_time = time.time() - start_train_time
     logger.info("=" * 70)
-    logger.info(f"Training successfully completed! Best Val Loss: {best_val_loss:.4f}")
-    logger.info(f"Model Checkpoint: {settings.MODEL_CHECKPOINT_PATH}")
+    logger.info(f"Training successfully completed in {total_training_time:.2f}s! Best Val Loss: {best_val_loss:.4f}")
+    logger.info(f"Model Checkpoint: {settings.MODEL_CHECKPOINT_PATH} (Verified: PASS)")
     logger.info("=" * 70)
+
+    # 9. Generate Training Report
+    report_data = {
+        "model_name": "Genkit Enterprise GPT v6.1",
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()),
+        "parameters": param_count,
+        "vocab_size": tokenizer.vocab_size,
+        "block_size": block_size,
+        "dataset_samples": len(encoded_sequences),
+        "train_samples": len(train_dataset),
+        "val_samples": len(val_dataset),
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "gradient_accumulation_steps": accum_steps,
+        "learning_rate": lr,
+        "best_val_loss": round(best_val_loss, 4),
+        "training_duration_seconds": round(total_training_time, 2),
+        "checkpoint_path": str(settings.MODEL_CHECKPOINT_PATH),
+        "checkpoint_verified": is_valid,
+        "checkpoint_status": verify_status,
+        "epoch_history": epoch_logs,
+    }
+
+    settings.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    report_path = settings.REPORTS_DIR / "training_report.json"
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(report_data, f, indent=2)
+    logger.info(f"Saved training report: {report_path}")
+
+    return report_data
 
 
 if __name__ == "__main__":
-    train_pipeline()
+    parser = argparse.ArgumentParser(description="Genkit AI V6 Master Model Training Pipeline")
+    parser.add_argument("--epochs", type=int, default=settings.EPOCHS, help="Training epochs")
+    parser.add_argument("--batch-size", type=int, default=settings.BATCH_SIZE, help="Micro-batch size")
+    parser.add_argument("--accum-steps", type=int, default=settings.GRADIENT_ACCUMULATION_STEPS, help="Gradient accumulation steps")
+    parser.add_argument("--block-size", type=int, default=settings.BLOCK_SIZE, help="Sequence block size")
+    parser.add_argument("--vocab-size", type=int, default=settings.VOCAB_SIZE, help="Vocabulary size")
+    parser.add_argument("--lr", type=float, default=settings.LEARNING_RATE, help="Learning rate")
+    parser.add_argument("--device", type=str, default=None, help="Device (cuda/cpu)")
+    parser.add_argument("--retrain-tokenizer", action="store_true", help="Force retraining BPE tokenizer")
+    args = parser.parse_args()
+
+    train_pipeline(
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        accum_steps=args.accum_steps,
+        block_size=args.block_size,
+        vocab_size=args.vocab_size,
+        lr=args.lr,
+        device=args.device,
+        retrain_tokenizer=args.retrain_tokenizer,
+    )

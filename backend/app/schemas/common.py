@@ -18,6 +18,8 @@ class ModelStatusInfo(BaseModel):
     status: str
     device: str
     checkpoint_exists: bool
+    checkpoint: Optional[str] = None
+    reason: Optional[str] = None
     parameters: Optional[int] = None
     vocab_size: Optional[int] = None
 
@@ -33,7 +35,7 @@ class DatabaseStatusInfo(BaseModel):
 
 
 class HealthResponse(BaseModel):
-    status: str = "healthy"
+    status: str = "healthy"  # "healthy" or "degraded"
     application: str
     version: str
     model: ModelStatusInfo

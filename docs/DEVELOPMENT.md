@@ -1,59 +1,42 @@
-# Local Development & Testing Guide
+# Genkit AI — Local Development Guide
 
-## 1. Prerequisites
+## Environment Setup
 
-- Python 3.10+ (PyTorch with CUDA support recommended)
-- Node.js 18+ (for React Vite frontend)
-- MySQL Server (optional; automatically falls back to local SQLite `genkit.db`)
-
----
-
-## 2. Environment Setup
-
-### Backend Setup
+### 1. Backend Setup
 ```bash
 cd backend
 python -m venv venv
-.\venv\Scripts\activate
-
-# Install dependencies
+.\venv\Scripts\Activate.ps1  # Windows PowerShell
 pip install -r requirements.txt
 ```
 
-### Frontend Setup
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
-```
-
----
-
-## 3. Running Services
-
-### Start Backend Server
-```bash
-cd backend
-python app/main.py
-# Server runs at http://localhost:8000
-# OpenAPI Docs: http://localhost:8000/docs
-```
-
-### Start Frontend Dev Server
-```bash
-cd frontend
 npm run dev
-# Frontend runs at http://localhost:5173
 ```
 
 ---
 
-## 4. Running Verification Tests
-
+## Running Automated Tests
 ```bash
-# Run unit & integration test suite
 cd backend
-python -m unittest discover -s tests
-
-# Run benchmark evaluation suite
-python evaluate.py
+python -m pytest tests/ -v
 ```
+
+---
+
+## Running Benchmarks and Evaluation
+```bash
+cd backend
+python scripts/evaluate.py
+```
+
+---
+
+## Code Quality and Style Guidelines
+- **Python**: Follow PEP 8 standards with explicit type annotations.
+- **Async/Await**: Maintain asynchronous execution in all I/O bound endpoints.
+- **SQL Security**: Use parameterized queries through `db_manager` or repositories.
+- **No External AI APIs**: All model weights, inference algorithms, and RAG retrieval pipelines must remain 100% self-hosted on local hardware.

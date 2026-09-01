@@ -182,15 +182,23 @@ class ByteFallbackBPETokenizer:
             word_freqs = new_word_freqs
 
     def _bpe_encode_word(self, word: str) -> List[str]:
-        """Applies learned BPE merges to a single pre-tokenized token."""
+        """Applies learned BPE merges to a single pre-tokenized token with caching."""
         if not word:
             return []
+        if hasattr(self, "_bpe_cache") and word in self._bpe_cache:
+            return self._bpe_cache[word]
+
         tokens = list(word)
         for pair in self.merges:
             merged_str = pair[0] + pair[1]
             tokens = list(_merge_word(tuple(tokens), pair, merged_str))
             if len(tokens) <= 1:
                 break
+
+        if not hasattr(self, "_bpe_cache"):
+            self._bpe_cache = {}
+        if len(self._bpe_cache) < 100000:
+            self._bpe_cache[word] = tokens
         return tokens
 
     def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:
