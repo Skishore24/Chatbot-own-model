@@ -1,17 +1,17 @@
 {
-  "timestamp": "2026-08-26 18:31:03",
+  "timestamp": "2026-08-30 22:17:17",
   "total_evaluated": 33,
-  "in_domain_retrieval_accuracy": "75.0%",
+  "in_domain_retrieval_accuracy": "96.4%",
   "out_of_domain_refusal_accuracy": "100.0%",
-  "average_retrieval_latency_ms": "1.20 ms",
+  "average_retrieval_latency_ms": "2.35 ms",
   "categories": {
-    "Company": "80.0% (5 tests)",
-    "Services": "85.7% (7 tests)",
-    "Technologies": "60.0% (5 tests)",
-    "Pricing": "66.7% (3 tests)",
+    "Company": "100.0% (5 tests)",
+    "Services": "100.0% (7 tests)",
+    "Technologies": "80.0% (5 tests)",
+    "Pricing": "100.0% (3 tests)",
     "Process": "100.0% (2 tests)",
-    "Portfolio": "66.7% (3 tests)",
-    "Contact": "66.7% (3 tests)",
+    "Portfolio": "100.0% (3 tests)",
+    "Contact": "100.0% (3 tests)",
     "OutOfDomain": "100.0% (5 tests)"
   },
   "results": [
@@ -20,13 +20,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.585,
+      "confidence": 0.9,
       "retrieved_chunks": [
-        "Handle",
-        "Why should I choose Genkit?",
-        "What is Genkit's project development process?"
+        "Genkit Founders",
+        "About Genkit",
+        "Why should I choose Genkit?"
       ],
-      "latency_ms": 1.62,
+      "latency_ms": 2.57,
       "passed": true
     },
     {
@@ -34,13 +34,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.955,
+      "confidence": 1.0,
       "retrieved_chunks": [
         "What is Genkit's remote work setup?",
         "What is Genkit's project development process?",
-        "Why should I choose Genkit?"
+        "About Genkit"
       ],
-      "latency_ms": 1.41,
+      "latency_ms": 1.92,
       "passed": true
     },
     {
@@ -48,13 +48,13 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.64,
+      "confidence": 0.696,
       "retrieved_chunks": [
-        "What is Genkit's project development process?",
         "What is Genkit's remote work setup?",
-        "Handle"
+        "What is Genkit's project development process?",
+        "Refund Policy"
       ],
-      "latency_ms": 1.37,
+      "latency_ms": 2.59,
       "passed": true
     },
     {
@@ -62,27 +62,27 @@
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.695,
+      "confidence": 1.0,
       "retrieved_chunks": [
-        "What is Genkit's remote work setup?",
-        "What is Genkit's project development process?",
-        "Genkit Tech Stack Overview"
+        "Mission & Vision",
+        "About Genkit",
+        "What is Genkit's remote work setup?"
       ],
-      "latency_ms": 1.46,
-      "passed": false
+      "latency_ms": 1.94,
+      "passed": true
     },
     {
       "question": "Tell me about the founders of Genkit.",
       "category": "Company",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.648,
+      "confidence": 0.914,
       "retrieved_chunks": [
-        "Why should I choose Genkit?",
-        "How long does it take to build a custom MVP?",
-        "Karan"
+        "Genkit Founders",
+        "About Genkit",
+        "How long does it take to build a custom MVP?"
       ],
-      "latency_ms": 1.39,
+      "latency_ms": 1.87,
       "passed": true
     },
     {
@@ -90,27 +90,27 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.645,
+      "confidence": 0.94,
       "retrieved_chunks": [
-        "Services Knowledge",
-        "Services Knowledge",
-        "Services Knowledge"
+        "Genkit Services Overview",
+        "How long does it take to build a custom MVP?",
+        "Why should I choose Genkit?"
       ],
-      "latency_ms": 1.5,
-      "passed": false
+      "latency_ms": 2.16,
+      "passed": true
     },
     {
       "question": "Does Genkit develop mobile apps?",
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.743,
+      "confidence": 0.82,
       "retrieved_chunks": [
         "Do you develop WordPress websites?",
-        "Services Knowledge",
-        "Pricing Knowledge"
+        "Landing Page Package",
+        "Website Development"
       ],
-      "latency_ms": 1.35,
+      "latency_ms": 2.09,
       "passed": true
     },
     {
@@ -118,13 +118,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.758,
+      "confidence": 0.85,
       "retrieved_chunks": [
         "How long does it take to build a custom MVP?",
-        "Do you develop WordPress websites?",
-        "Pricing Knowledge"
+        "Custom AI Agent Package",
+        "AI & Chatbot Development"
       ],
-      "latency_ms": 1.43,
+      "latency_ms": 3.77,
       "passed": true
     },
     {
@@ -132,13 +132,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.759,
+      "confidence": 0.829,
       "retrieved_chunks": [
-        "Services Knowledge",
-        "Figma",
-        "Services Knowledge"
+        "Genkit Services Overview",
+        "Creative Design Tools",
+        "Graphic Design"
       ],
-      "latency_ms": 1.49,
+      "latency_ms": 6.13,
       "passed": true
     },
     {
@@ -146,13 +146,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.652,
+      "confidence": 0.925,
       "retrieved_chunks": [
-        "Rohan",
-        "Services Knowledge",
-        "Best For"
+        "Creative Design Tools",
+        "Video Editing",
+        "Graphic Design"
       ],
-      "latency_ms": 1.45,
+      "latency_ms": 3.11,
       "passed": true
     },
     {
@@ -160,13 +160,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.689,
+      "confidence": 0.85,
       "retrieved_chunks": [
-        "Amit",
-        "Pricing Knowledge",
-        "Clients Knowledge"
+        "Search Engine Optimization (SEO)",
+        "Genkit Services Overview",
+        "Amit"
       ],
-      "latency_ms": 1.52,
+      "latency_ms": 2.05,
       "passed": true
     },
     {
@@ -174,13 +174,13 @@
       "category": "Services",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.794,
+      "confidence": 0.885,
       "retrieved_chunks": [
-        "Do you develop WordPress websites?",
         "How long does it take to build a custom MVP?",
-        "Django"
+        "Do you develop WordPress websites?",
+        "ShopSmart Brand Refresh & Web Platform"
       ],
-      "latency_ms": 1.41,
+      "latency_ms": 2.22,
       "passed": true
     },
     {
@@ -188,13 +188,13 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.9,
+      "confidence": 0.85,
       "retrieved_chunks": [
         "Genkit Tech Stack Overview",
-        "Clients Knowledge",
-        "What is Genkit's project development process?"
+        "Industries Served",
+        "Genkit Services Overview"
       ],
-      "latency_ms": 1.37,
+      "latency_ms": 2.96,
       "passed": true
     },
     {
@@ -202,13 +202,13 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.766,
+      "confidence": 0.95,
       "retrieved_chunks": [
-        "React",
-        "Sneha",
-        "Genkit Tech Stack Overview"
+        "Frontend Technologies",
+        "Genkit Tech Stack Overview",
+        "Do you develop WordPress websites?"
       ],
-      "latency_ms": 1.37,
+      "latency_ms": 2.76,
       "passed": true
     },
     {
@@ -216,9 +216,9 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.7,
       "retrieved_chunks": [],
-      "latency_ms": 0.01,
+      "latency_ms": 3.45,
       "passed": false
     },
     {
@@ -226,27 +226,27 @@
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.721,
+      "confidence": 0.829,
       "retrieved_chunks": [
-        "Company Knowledge",
-        "Do you sign Non-Disclosure Agreements (NDAs)?",
-        "Services Knowledge"
+        "Creative Design Tools",
+        "Graphic Design",
+        "Design Philosophy"
       ],
-      "latency_ms": 1.89,
-      "passed": false
+      "latency_ms": 3.93,
+      "passed": true
     },
     {
       "question": "What databases does Genkit work with?",
       "category": "Technologies",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.92,
+      "confidence": 0.95,
       "retrieved_chunks": [
         "What is Genkit's remote work setup?",
-        "Details",
+        "Databases",
         "Genkit Tech Stack Overview"
       ],
-      "latency_ms": 1.44,
+      "latency_ms": 1.93,
       "passed": true
     },
     {
@@ -254,13 +254,13 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.737,
+      "confidence": 0.829,
       "retrieved_chunks": [
-        "Challenge",
-        "How long does it take to build a custom MVP?",
-        "Why should I choose Genkit?"
+        "Business Website Package",
+        "Website Development",
+        "Contact Genkit"
       ],
-      "latency_ms": 1.37,
+      "latency_ms": 1.91,
       "passed": true
     },
     {
@@ -268,13 +268,13 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.766,
+      "confidence": 0.871,
       "retrieved_chunks": [
         "What is Genkit's project development process?",
-        "Services Knowledge",
-        "Pricing Knowledge"
+        "Hourly Rates",
+        "Website Development"
       ],
-      "latency_ms": 1.38,
+      "latency_ms": 2.17,
       "passed": true
     },
     {
@@ -285,10 +285,10 @@
       "confidence": 1.0,
       "retrieved_chunks": [
         "What is Genkit's project development process?",
-        "Project",
-        "Project"
+        "AI & Chatbot Development",
+        "Website Development"
       ],
-      "latency_ms": 1.37,
+      "latency_ms": 1.93,
       "passed": true
     },
     {
@@ -299,10 +299,10 @@
       "confidence": 1.0,
       "retrieved_chunks": [
         "How long does it take to build a custom MVP?",
-        "Feedback",
+        "Custom AI Agent Package",
         "Do you develop WordPress websites?"
       ],
-      "latency_ms": 1.57,
+      "latency_ms": 1.91,
       "passed": true
     },
     {
@@ -310,27 +310,27 @@
       "category": "Pricing",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.722,
+      "confidence": 0.882,
       "retrieved_chunks": [
-        "Do you sign Non-Disclosure Agreements (NDAs)?",
-        "Feedback",
-        "Why should I choose Genkit?"
+        "Do you develop WordPress websites?",
+        "Genkit Pricing & Packages",
+        "Support Policy"
       ],
-      "latency_ms": 1.43,
-      "passed": false
+      "latency_ms": 1.95,
+      "passed": true
     },
     {
       "question": "What projects has Genkit delivered?",
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.73,
+      "confidence": 0.798,
       "retrieved_chunks": [
-        "Karan",
         "What is Genkit's project development process?",
-        "Standard"
+        "Karan",
+        "Support Policy"
       ],
-      "latency_ms": 1.4,
+      "latency_ms": 1.81,
       "passed": true
     },
     {
@@ -338,27 +338,27 @@
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.717,
+      "confidence": 0.833,
       "retrieved_chunks": [
         "What is Genkit's remote work setup?",
-        "Do you sign Non-Disclosure Agreements (NDAs)?",
-        "Pricing Knowledge"
+        "ShopSmart Brand Refresh & Web Platform",
+        "Do you sign Non-Disclosure Agreements (NDAs)?"
       ],
-      "latency_ms": 1.85,
-      "passed": false
+      "latency_ms": 1.8,
+      "passed": true
     },
     {
       "question": "Have you built enterprise AI chatbots before?",
       "category": "Portfolio",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.626,
+      "confidence": 0.829,
       "retrieved_chunks": [
-        "Feedback",
-        "Neha",
-        "LexiBot Legal Assistant"
+        "AI & Chatbot Development",
+        "Genkit Services Overview",
+        "Custom AI Agent Package"
       ],
-      "latency_ms": 1.4,
+      "latency_ms": 1.83,
       "passed": true
     },
     {
@@ -366,13 +366,13 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.837,
+      "confidence": 0.925,
       "retrieved_chunks": [
-        "Pricing Knowledge",
-        "Handle",
-        "How long does it take to build a custom MVP?"
+        "Contact Genkit",
+        "Landing Page Package",
+        "Genkit Pricing & Packages"
       ],
-      "latency_ms": 1.52,
+      "latency_ms": 1.81,
       "passed": true
     },
     {
@@ -380,13 +380,13 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.811,
+      "confidence": 0.835,
       "retrieved_chunks": [
-        "Address",
         "What is Genkit's remote work setup?",
-        "Type"
+        "Contact Genkit",
+        "Genkit Services Overview"
       ],
-      "latency_ms": 1.39,
+      "latency_ms": 1.9,
       "passed": true
     },
     {
@@ -394,23 +394,23 @@
       "category": "Contact",
       "is_out_of_domain": false,
       "grounded": true,
-      "confidence": 0.668,
+      "confidence": 0.808,
       "retrieved_chunks": [
-        "Project",
-        "Project",
-        "Project"
+        "What is Genkit's project development process?",
+        "Do you sign Non-Disclosure Agreements (NDAs)?",
+        "Genkit Pricing & Packages"
       ],
-      "latency_ms": 1.36,
-      "passed": false
+      "latency_ms": 1.83,
+      "passed": true
     },
     {
       "question": "What is the capital of France?",
       "category": "OutOfDomain",
       "is_out_of_domain": true,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.444,
       "retrieved_chunks": [],
-      "latency_ms": 0.01,
+      "latency_ms": 1.76,
       "passed": true
     },
     {
@@ -418,9 +418,9 @@
       "category": "OutOfDomain",
       "is_out_of_domain": true,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.346,
       "retrieved_chunks": [],
-      "latency_ms": 0.01,
+      "latency_ms": 1.8,
       "passed": true
     },
     {
@@ -428,9 +428,9 @@
       "category": "OutOfDomain",
       "is_out_of_domain": true,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.349,
       "retrieved_chunks": [],
-      "latency_ms": 0.0,
+      "latency_ms": 1.83,
       "passed": true
     },
     {
@@ -438,9 +438,9 @@
       "category": "OutOfDomain",
       "is_out_of_domain": true,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.35,
       "retrieved_chunks": [],
-      "latency_ms": 0.01,
+      "latency_ms": 1.9,
       "passed": true
     },
     {
@@ -448,9 +448,9 @@
       "category": "OutOfDomain",
       "is_out_of_domain": true,
       "grounded": false,
-      "confidence": 0.0,
+      "confidence": 0.387,
       "retrieved_chunks": [],
-      "latency_ms": 0.0,
+      "latency_ms": 1.86,
       "passed": true
     }
   ]

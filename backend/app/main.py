@@ -56,10 +56,6 @@ async def add_telemetry_headers(request: Request, call_next):
 
 # Mount API Routers
 app.include_router(api_v1_router)
-# Also alias under /api/v5 for backward compatibility
-app.include_router(api_v1_router, prefix="/api/v5")
-# Alias endpoints directly at root for proxy convenience
-app.include_router(api_v1_router.routes[0].endpoint if False else api_v1_router, prefix="")
 
 
 @app.get("/")

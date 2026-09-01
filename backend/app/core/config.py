@@ -73,6 +73,10 @@ class AppSettings(BaseSettings):
     def LOG_DIR(self) -> Path:
         return self.BASE_DIR / "logs"
 
+    @property
+    def REPORTS_DIR(self) -> Path:
+        return self.BASE_DIR / "reports"
+
     # MySQL Database Configuration
     MYSQL_HOST: str = Field(default="localhost")
     MYSQL_PORT: int = Field(default=3306)
@@ -139,7 +143,7 @@ class AppSettings(BaseSettings):
 
     def init_directories(self) -> None:
         """Ensures operational directories exist."""
-        for folder in [self.DATASET_DIR, self.MODEL_DIR, self.LOG_DIR]:
+        for folder in [self.DATASET_DIR, self.MODEL_DIR, self.LOG_DIR, self.REPORTS_DIR]:
             folder.mkdir(parents=True, exist_ok=True)
 
 

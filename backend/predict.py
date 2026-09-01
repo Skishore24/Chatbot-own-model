@@ -27,7 +27,7 @@ def main():
     print("=" * 60 + "\n")
 
     rag = get_rag_pipeline()
-    model, tokenizer, _ = load_model_and_tokenizer()
+    model, tokenizer, config, status = load_model_and_tokenizer()
     engine = GenerationEngine(model, tokenizer)
 
     session_id = str(uuid.uuid4())[:8]
@@ -55,10 +55,8 @@ def main():
             if not is_grounded:
                 print(rag.get_refusal_answer())
             else:
-                prompt = rag.build_prompt(clean_query, chunks)
-                for chunk in engine.generate_stream(prompt):
-                    print(chunk, end="", flush=True)
-                print()
+                answer = rag.synthesize_answer(clean_query, chunks)
+                print(answer)
 
         except (KeyboardInterrupt, EOFError):
             print("\nExiting CLI.")

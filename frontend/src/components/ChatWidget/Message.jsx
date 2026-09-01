@@ -1,5 +1,4 @@
 import React from "react";
-
 import logo from "../../assets/images/logo1.png";
 
 export default function Message({ message }) {
@@ -8,7 +7,6 @@ export default function Message({ message }) {
   return (
     <div className={`message-row ${isUser ? "user-row" : "bot-row"}`}>
       {/* Bot Avatar */}
-
       {!isUser && (
         <div className="avatar bot-avatar">
           <img src={logo} alt="Genkit" className="bot-logo" />
@@ -16,10 +14,9 @@ export default function Message({ message }) {
       )}
 
       {/* Bubble */}
-
       <div className={`msg-wrap ${isUser ? "user-wrap" : "bot-wrap"}`}>
         {isUser ? (
-          // ✅ XSS-safe: user text rendered as plain text (no innerHTML)
+          // XSS-safe: user text rendered as plain text (no innerHTML)
           <div className="message user-message">{message.text}</div>
         ) : (
           // Bot messages use sanitized HTML from marked.parse()
@@ -37,7 +34,6 @@ export default function Message({ message }) {
       </div>
 
       {/* User Avatar */}
-
       {isUser && (
         <div className="avatar user-avatar">
           <span className="material-symbols-rounded">person</span>
@@ -46,3 +42,4 @@ export default function Message({ message }) {
     </div>
   );
 }
+

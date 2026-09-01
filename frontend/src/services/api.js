@@ -62,6 +62,7 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
     const decoder = new TextDecoder("utf-8");
     let fullResponse = "";
     let sseBuffer = "";
+    let metadata = { sources: [], intent: "General", grounded: true, confidence: 1.0 };
 
     while (true) {
       const { done, value } = await reader.read();
@@ -80,32 +81,38 @@ export async function sendChatMessage(message, onChunk, onComplete, onError) {
           if (trimmed.startsWith("data: ")) {
             try {
               const payload = JSON.parse(trimmed.replace(/^data:\s*/, ""));
-              if (payload.event === "token" && payload.chunk) {
+              if (payload.event === "start") {
+                if (payload.sources) metadata.sources = payload.sources;
+                if (payload.intent) metadata.intent = payload.intent;
+                if (payload.grounded !== undefined) metadata.grounded = payload.grounded;
+              } else if (payload.event === "token" && payload.chunk) {
                 fullResponse += payload.chunk;
-                if (onChunk) onChunk(fullResponse);
+                if (onChunk) onChunk(fullResponse, metadata);
               } else if (payload.event === "end") {
                 if (payload.session_id) saveSessionId(payload.session_id);
+                if (payload.confidence !== undefined) metadata.confidence = payload.confidence;
               }
             } catch (_) {
               const raw = trimmed.replace(/^data:\s*/, "");
               if (raw && !raw.startsWith("{")) {
                 fullResponse += raw;
-                if (onChunk) onChunk(fullResponse);
+                if (onChunk) onChunk(fullResponse, metadata);
               }
             }
           }
         }
       } else {
         fullResponse += chunkText;
-        if (onChunk) onChunk(fullResponse);
+        if (onChunk) onChunk(fullResponse, metadata);
       }
     }
 
     if (onComplete) {
-      onComplete(fullResponse);
+      onComplete(fullResponse, metadata);
     }
 
     return fullResponse;
+
   } catch (error) {
     console.error("[Genkit API Error]", error);
     if (onError) {

@@ -179,7 +179,7 @@ export default function useChat() {
           // chunks update it in-place
           // ===================================
 
-          (chunk) => {
+          (chunk, meta) => {
             if (!botMessageAdded) {
               // First chunk: add bot message and hide typing indicator
               botMessageAdded = true;
@@ -191,6 +191,7 @@ export default function useChat() {
                   sender: "bot",
                   text: chunk,
                   html: renderMarkdown(chunk),
+                  sources: meta?.sources || [],
                   time: getCurrentTime(),
                 },
               ]);
@@ -201,10 +202,9 @@ export default function useChat() {
                   msg.id === botId
                     ? {
                         ...msg,
-
                         text: chunk,
-
                         html: renderMarkdown(chunk),
+                        sources: (meta?.sources && meta.sources.length > 0) ? meta.sources : msg.sources,
                       }
                     : msg,
                 ),
@@ -216,7 +216,7 @@ export default function useChat() {
           // Completed
           // ===================================
 
-          (finalText) => {
+          (finalText, meta) => {
             setTyping(false);
 
             if (!botMessageAdded) {
@@ -231,6 +231,7 @@ export default function useChat() {
                   html: renderMarkdown(
                     finalText || "I couldn't find an answer to that.",
                   ),
+                  sources: meta?.sources || [],
                   time: getCurrentTime(),
                 },
               ]);
@@ -240,15 +241,15 @@ export default function useChat() {
                   msg.id === botId
                     ? {
                         ...msg,
-
                         text: finalText,
-
                         html: renderMarkdown(finalText),
+                        sources: (meta?.sources && meta.sources.length > 0) ? meta.sources : msg.sources,
                       }
                     : msg,
                 ),
               );
             }
+
 
             // -------------------------------
             // Show Lead Form

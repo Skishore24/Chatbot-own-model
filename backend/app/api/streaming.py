@@ -7,6 +7,7 @@ Real Server-Sent Events (SSE) token-by-token streaming endpoint for Genkit AI V6
 - Persists full response with latency into MySQL
 """
 
+import asyncio
 import json
 import time
 import uuid
@@ -50,33 +51,27 @@ async def sse_token_generator(query: str, session_id: str) -> AsyncGenerator[str
         "sources": sources_data,
     }
     yield f"data: {json.dumps(start_payload)}\n\n"
+    await asyncio.sleep(0)
 
     full_answer_parts = []
 
     # 2. Refusal or Streaming Generation
     if not is_grounded:
         refusal = rag_pipeline.get_refusal_answer()
-        full_answer_parts.append(refusal)
-        yield f"data: {json.dumps({'event': 'token', 'chunk': refusal})}\n\n"
-    elif model_status == ModelStatus.READY and engine.model is not None:
-        prompt = rag_pipeline.build_prompt(query, chunks)
-        try:
-            for token_chunk in engine.generate_stream(prompt):
-                if token_chunk:
-                    full_answer_parts.append(token_chunk)
-                    token_payload = {"event": "token", "chunk": token_chunk}
-                    yield f"data: {json.dumps(token_payload)}\n\n"
-        except Exception as e:
-            logger.error(f"Error during token streaming: {e}")
-            error_payload = {"event": "error", "message": "Streaming interrupted"}
-            yield f"data: {json.dumps(error_payload)}\n\n"
+        full_answer = refusal
+        # Stream refusal tokens
+        for word in refusal.split(" "):
+            chunk = word + " "
+            yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
+            await asyncio.sleep(0.01)
     else:
-        # Fallback to verified context chunk
-        context_answer = f"{chunks[0].text}" if chunks else "No relevant context found."
-        full_answer_parts.append(context_answer)
-        yield f"data: {json.dumps({'event': 'token', 'chunk': context_answer})}\n\n"
-
-    full_answer = "".join(full_answer_parts).strip()
+        full_answer = rag_pipeline.synthesize_answer(query, chunks)
+        # Stream synthesized grounded markdown text word-by-word
+        words = full_answer.split(" ")
+        for i, word in enumerate(words):
+            chunk = word + (" " if i < len(words) - 1 else "")
+            yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
+            await asyncio.sleep(0.012)
     if not full_answer and chunks:
         full_answer = f"Based on Genkit verified knowledge: {chunks[0].text}"
         yield f"data: {json.dumps({'event': 'token', 'chunk': full_answer})}\n\n"

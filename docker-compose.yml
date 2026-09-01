@@ -1,0 +1,67 @@
+services:
+  # 1. MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: genkit_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: genkit_ai
+      MYSQL_USER: genkit_user
+      MYSQL_PASSWORD: genkit_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Genkit AI FastAPI Backend
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: genkit_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEBUG=false
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=genkit_user
+      - MYSQL_PASSWORD=genkit_password
+      - MYSQL_DATABASE=genkit_ai
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/datasets:/app/backend/datasets
+      - ./backend/genkit-model:/app/backend/genkit-model
+      - ./backend/logs:/app/backend/logs
+      - ./backend/reports:/app/backend/reports
+
+  # 3. React + Vite Frontend (Development / Production Preview)
+  frontend:
+    image: node:20-alpine
+    container_name: genkit_frontend
+    restart: unless-stopped
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE=http://localhost:8000
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
+    driver: local

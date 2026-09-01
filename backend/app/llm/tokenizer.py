@@ -293,6 +293,77 @@ class ByteFallbackBPETokenizer:
         self.merges = [tuple(m) for m in data.get("merges", [])]
         self._special_set = set(SPECIAL_TOKENS)
 
+    def create_stream_decoder(self, skip_special_tokens: bool = True) -> "StreamDecoder":
+        """Creates an incremental StreamDecoder for token-by-token generation streaming."""
+        return StreamDecoder(self, skip_special_tokens=skip_special_tokens)
+
+
+class StreamDecoder:
+    """
+    Incremental stream decoder that buffers partial multi-byte UTF-8 byte tokens
+    and decodes text chunks as soon as complete valid characters are available.
+    """
+
+    def __init__(self, tokenizer: ByteFallbackBPETokenizer, skip_special_tokens: bool = True):
+        self.tokenizer = tokenizer
+        self.skip_special_tokens = skip_special_tokens
+        self.byte_buffer = bytearray()
+
+    def put(self, token_id: int) -> str:
+        """Processes a single token ID and returns any newly decoded text chunk."""
+        tok = self.tokenizer.decoder.get(token_id)
+        if tok is None:
+            return ""
+
+        if tok in self.tokenizer._special_set:
+            res = self.flush()
+            if not self.skip_special_tokens:
+                res += tok
+            return res
+
+        # Check if byte token (<0xHH>)
+        if tok.startswith("<0x") and tok.endswith(">") and len(tok) == 6:
+            try:
+                b = int(tok[3:5], 16)
+                self.byte_buffer.append(b)
+                # Attempt to decode as much valid UTF-8 as possible
+                return self._drain_valid_utf8()
+            except ValueError:
+                pass
+
+        # Text token: flush any buffered bytes first, then return text token
+        prefix = self.flush()
+        return prefix + tok
+
+    def _drain_valid_utf8(self) -> str:
+        """Drains complete valid UTF-8 bytes from the buffer."""
+        if not self.byte_buffer:
+            return ""
+        # Try decoding full buffer
+        try:
+            text = self.byte_buffer.decode("utf-8")
+            self.byte_buffer.clear()
+            return text
+        except UnicodeDecodeError:
+            # Multi-byte character may be incomplete at end. Find longest valid prefix.
+            for i in range(len(self.byte_buffer) - 1, 0, -1):
+                try:
+                    text = self.byte_buffer[:i].decode("utf-8")
+                    self.byte_buffer = self.byte_buffer[i:]
+                    return text
+                except UnicodeDecodeError:
+                    continue
+            return ""
+
+    def flush(self) -> str:
+        """Flushes all remaining bytes in the buffer with replacement characters if needed."""
+        if not self.byte_buffer:
+            return ""
+        text = self.byte_buffer.decode("utf-8", errors="replace")
+        self.byte_buffer.clear()
+        return text
+
 
 # Default Singleton Tokenizer
 default_tokenizer = ByteFallbackBPETokenizer()
+

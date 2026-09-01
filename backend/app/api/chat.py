@@ -76,24 +76,7 @@ async def chat_endpoint(request: ChatRequest, req: Request):
             ChatSource(id=c.id, title=c.title, category=c.category, score=c.score)
             for c in chunks
         ]
-
-        engine, model_status = get_generation_engine_and_status()
-
-        if model_status == ModelStatus.READY and engine.model is not None:
-            # 5. Generate with trained custom LLM
-            prompt = rag_pipeline.build_prompt(cleaned_query, chunks)
-            raw_answer = engine.generate(prompt)
-            cleaned_answer = security_service.sanitize_output(raw_answer)
-
-            # Validate answer-level groundedness against context
-            if cleaned_answer and rag_pipeline.validator.validate_answer_groundedness(cleaned_answer, chunks):
-                answer = cleaned_answer
-            else:
-                # Fallback to verified context if generated answer was ungrounded or empty
-                answer = f"{chunks[0].text}"
-        else:
-            # Model not trained / incompatible: use deterministic verified RAG answer
-            answer = f"{chunks[0].text}"
+        answer = rag_pipeline.synthesize_answer(cleaned_query, chunks)
 
     # 6. Persist Response & Return
     latency_ms = (time.time() - start_time) * 1000

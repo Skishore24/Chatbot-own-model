@@ -149,12 +149,13 @@ def run_benchmark() -> dict:
     }
 
     # Save JSON report
-    report_json_path = settings.BASE_DIR / "evaluation_report.json"
+    settings.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    report_json_path = settings.REPORTS_DIR / "evaluation_report.json"
     with open(report_json_path, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
     # Save Markdown report
-    report_md_path = settings.BASE_DIR / "evaluation_report.md"
+    report_md_path = settings.REPORTS_DIR / "evaluation_report.md"
     with open(report_md_path, "w", encoding="utf-8") as f:
         f.write("# Genkit AI v6.0 Evaluation Benchmark Report\n\n")
         f.write(f"**Date:** {report['timestamp']}\n\n")

@@ -111,6 +111,7 @@ class GenerationEngine:
         attention_mask = (x != self.tokenizer.pad_id).long()
         generated_ids: List[int] = list(input_ids)
         past_key_values = None
+        stream_decoder = self.tokenizer.create_stream_decoder(skip_special_tokens=True)
 
         # Pre-fill KV-Cache on prompt
         logits, past_key_values = self.model(
@@ -146,8 +147,8 @@ class GenerationEngine:
 
             generated_ids.append(token_id)
 
-            # Decode single token chunk
-            chunk_text = self.tokenizer.decode([token_id], skip_special_tokens=True)
+            # Decode single token chunk with stream decoder buffer
+            chunk_text = stream_decoder.put(token_id)
             if chunk_text:
                 yield chunk_text
 
@@ -159,3 +160,9 @@ class GenerationEngine:
                 use_cache=True,
             )
             next_token_logits = logits[:, -1, :]
+
+        # Flush any remaining bytes from stream decoder buffer
+        remaining_chunk = stream_decoder.flush()
+        if remaining_chunk:
+            yield remaining_chunk
+

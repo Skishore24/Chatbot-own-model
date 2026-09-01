@@ -65,12 +65,66 @@
 
 ---
 
+## 📁 Repository Structure
+
+```
+Chatbot-own-model/
+├── backend/
+│   ├── app/
+│   │   ├── api/             # FastAPI REST & SSE Streaming Routers
+│   │   ├── core/            # Configuration, Logging, Security Guard
+│   │   ├── database/        # Thread-Safe Dual DB Manager (MySQL + SQLite)
+│   │   ├── llm/             # Custom GPT Architecture, Tokenizer, Generation
+│   │   ├── rag/             # Inverted Index, BM25, TF-IDF, RRF, Grounding
+│   │   ├── schemas/         # Pydantic Request/Response Schemas
+│   │   └── main.py          # Master FastAPI Application
+│   ├── datasets/            # Curated Genkit Enterprise Knowledge JSONs
+│   ├── genkit-model/        # Trained PyTorch Checkpoints & Tokenizers
+│   ├── logs/                # Structured Application Logs & Traces
+│   ├── reports/             # Benchmark Evaluation Reports (JSON/MD)
+│   ├── tests/               # Unit & Integration Pytest Suite
+│   ├── training/            # Dataset Generator, BPE Trainer, LLM Training Pipeline
+│   ├── evaluate.py          # Benchmark Evaluation CLI Launcher
+│   ├── main.py              # Backend Server CLI Launcher
+│   ├── predict.py           # Interactive CLI Prediction Utility
+│   ├── requirements.txt     # Python Dependencies
+│   └── train.py             # Master Model Training Launcher
+├── frontend/
+│   ├── src/
+│   │   ├── assets/          # Static Assets & Branding
+│   │   ├── components/      # React UI Components (ChatWidget, LeadForm, etc.)
+│   │   ├── hooks/           # Custom React Hooks (useChat, useChatStream)
+│   │   ├── services/        # API Client & SSE Client
+│   │   └── utils/           # Markdown Parser & Utility Helpers
+│   ├── package.json         # Node Dependencies
+│   └── vite.config.js       # Vite Build Configuration
+├── docker/
+│   └── Dockerfile           # Backend Container Definition
+├── docs/                    # Technical Architecture & Deployment Docs
+├── docker-compose.yml       # Full-Stack Orchestration (MySQL + Backend + Frontend)
+├── .env.example             # Environment Configuration Template
+└── README.md                # Project Overview & Quick Start
+```
+
+---
+
 ## 🚀 Quick Start
 
-### 1. Backend Setup & Startup
+### Option A: Docker Compose (Recommended)
 
 ```bash
-# Clone the repository
+# Build and run full-stack services (MySQL, FastAPI Backend, React Frontend)
+docker compose up --build
+```
+- Frontend: `http://localhost:5173`
+- Backend API Docs: `http://localhost:8000/docs`
+
+### Option B: Local Setup
+
+#### 1. Backend Setup & Startup
+
+```bash
+# Clone repository
 git clone https://github.com/Skishore24/Chatbot-own-model.git
 cd Chatbot-own-model/backend
 
@@ -80,11 +134,11 @@ python -m venv venv
 pip install -r requirements.txt
 
 # Start the backend server
-python app/main.py
+python main.py
 ```
 > Server runs at `http://localhost:8000`. Interactive API Docs: `http://localhost:8000/docs`.
 
-### 2. Frontend Setup & Startup
+#### 2. Frontend Setup & Startup
 
 ```bash
 cd ../frontend
