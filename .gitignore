@@ -9,17 +9,30 @@ venv/
 ENV/
 .venv/
 
-# PyTorch checkpoints
+# PyTorch checkpoints & backups
 *.pt
 *.pth
 *.bin
+*.ckpt
+*.bak
+*.tmp
+*.tmp_*
 genkit-model/*.pt
 genkit-model/*.pth
+genkit-model/*.bak
+genkit-model/*.tmp*
+backend/genkit-model/*.pt
+backend/genkit-model/*.pth
+backend/genkit-model/*.bak
+backend/genkit-model/*.tmp*
 
-# Database
+# Database & SQLite Journals
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
+*.db-journal
 genkit.db
 backend/genkit.db
 
