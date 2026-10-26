@@ -1,7 +1,7 @@
 """
 backend/app/core/config.py
 ----------------------------------------------------
-GENKIT AI v6.0 Configuration Subsystem
+GENKIT AI v6.1 Configuration Subsystem
 Single source of truth for paths, model hyperparameters, RAG parameters, and DB settings.
 """
 
@@ -77,6 +77,10 @@ class AppSettings(BaseSettings):
     def REPORTS_DIR(self) -> Path:
         return self.BASE_DIR / "reports"
 
+    # Qdrant Vector DB — QDRANT_URL is empty by default (uses in-memory mode)
+    QDRANT_URL: str = Field(default="", description="Qdrant server URL, e.g. http://localhost:6333. Leave empty for in-memory mode.")
+    QDRANT_API_KEY: str = Field(default="", description="Qdrant Cloud API key (optional).")
+
     # MySQL Database Configuration
     MYSQL_HOST: str = Field(default="localhost")
     MYSQL_PORT: int = Field(default=3306)
@@ -120,8 +124,10 @@ class AppSettings(BaseSettings):
     RAG_TOP_K: int = Field(default=4)
     RAG_BM25_K1: float = Field(default=1.5)
     RAG_BM25_B: float = Field(default=0.75)
-    RAG_FUSION_BM25_WEIGHT: float = Field(default=0.60)
-    RAG_FUSION_TFIDF_WEIGHT: float = Field(default=0.40)
+    RAG_USE_QDRANT: bool = Field(default=True, description="Enable Qdrant dense vector semantic search")
+    RAG_FUSION_BM25_WEIGHT: float = Field(default=0.45)
+    RAG_FUSION_TFIDF_WEIGHT: float = Field(default=0.20)
+    RAG_FUSION_QDRANT_WEIGHT: float = Field(default=0.35)
     RAG_CONFIDENCE_THRESHOLD: float = Field(default=0.25)
     GROUNDEDNESS_THRESHOLD: float = Field(default=0.40)
 
