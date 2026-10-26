@@ -37,6 +37,8 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-genkit_ai}
       - SECRET_KEY=${SECRET_KEY}
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
     volumes:
       - ./backend/datasets:/app/backend/datasets:ro
       - ./backend/genkit-model:/app/backend/genkit-model:ro
@@ -47,6 +49,15 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: genkit_qdrant_prod
+    restart: always
+    volumes:
+      - qdrant_prod_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
 
   frontend:
     build:
@@ -64,4 +75,6 @@ services:
 
 volumes:
   mysql_prod_data:
+    driver: local
+  qdrant_prod_data:
     driver: local

@@ -15,6 +15,7 @@ COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend application source
+
 COPY backend/ /app/backend/
 
 # Set Environment Variables

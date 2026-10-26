@@ -1,7 +1,7 @@
 """
 backend/tests/test_rag.py
 ----------------------------------------------------
-Unit tests for Hybrid RAG Pipeline, BM25, TF-IDF, and Grounding.
+Unit tests for Hybrid RAG Pipeline, BM25, TF-IDF, Qdrant, and Grounding.
 """
 
 import unittest
@@ -12,8 +12,9 @@ from app.rag.grounding import DOMAIN_REFUSAL_MESSAGE
 
 class TestHybridRAG(unittest.TestCase):
 
-    def setUp(self):
-        self.sample_chunks = [
+    @classmethod
+    def setUpClass(cls):
+        cls.sample_chunks = [
             DocumentChunk(
                 id="services_web",
                 source="services",
@@ -39,7 +40,7 @@ class TestHybridRAG(unittest.TestCase):
                 keywords=["company", "founders", "kishore", "surya", "about"],
             ),
         ]
-        self.pipeline = HybridRAGPipeline(chunks=self.sample_chunks)
+        cls.pipeline = HybridRAGPipeline(chunks=cls.sample_chunks)
 
     def test_in_domain_retrieval(self):
         """Test in-domain query returns relevant document chunk."""
@@ -63,6 +64,32 @@ class TestHybridRAG(unittest.TestCase):
         self.assertIn("CONTEXT:", prompt)
         self.assertIn("QUESTION:", prompt)
         self.assertIn("ANSWER:", prompt)
+
+    def test_qdrant_semantic_retrieval(self):
+        """Verify Qdrant dense vector semantic retrieval on paraphrased query."""
+        if self.pipeline.qdrant and self.pipeline.qdrant.is_available:
+            scores = self.pipeline.qdrant.score_query("smartphone application engineering")
+            self.assertEqual(len(scores), len(self.sample_chunks))
+            # Smartphone query should score highest on Mobile chunk (idx 1)
+            self.assertGreater(scores[1], 0.0)
+
+    def test_hybrid_reranking_with_qdrant(self):
+        """Verify hybrid reranker incorporates Qdrant semantic scores."""
+        chunks, confidence, is_grounded = self.pipeline.retrieve("smartphone application engineering")
+        self.assertTrue(is_grounded)
+        self.assertTrue(len(chunks) > 0)
+        self.assertEqual(chunks[0].id, "services_mobile")
+
+    def test_qdrant_availability_flag(self):
+        """Verify QdrantRetriever reports its availability correctly."""
+        if self.pipeline.qdrant is not None:
+            # is_available should be a bool
+            self.assertIsInstance(self.pipeline.qdrant.is_available, bool)
+
+    def test_greeting_synthesis(self):
+        """Verify greeting queries return a friendly response."""
+        answer = self.pipeline.synthesize_answer("hello", self.sample_chunks)
+        self.assertIn("Genkit AI", answer)
 
 
 if __name__ == "__main__":

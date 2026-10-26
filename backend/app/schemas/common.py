@@ -27,6 +27,7 @@ class ModelStatusInfo(BaseModel):
 class RagStatusInfo(BaseModel):
     status: str
     documents: int
+    vector_store: Optional[str] = None  # "active" | "disabled"
 
 
 class DatabaseStatusInfo(BaseModel):

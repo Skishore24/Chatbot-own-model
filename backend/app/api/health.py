@@ -1,11 +1,12 @@
 """
 backend/app/api/health.py
 ----------------------------------------------------
-Health, Model & RAG diagnostic endpoints for Genkit AI V6.
+Health, Model & RAG diagnostic endpoints for Genkit AI V6.1.
 Accurately reports system health ('healthy' or 'degraded') based on:
 - Model readiness state (MODEL_READY, MODEL_INVALID, MODEL_INCOMPATIBLE, MODEL_NOT_FOUND)
 - Database connectivity state
 - RAG document index status
+- Qdrant vector store status
 """
 
 from fastapi import APIRouter
@@ -34,7 +35,7 @@ async def get_health():
     checkpoint_exists = settings.model_checkpoint_exists()
     _, status = get_generation_engine_and_status()
 
-    # Determine reason if not ready
+    # Determine reason if model not ready
     reason = None
     if status == ModelStatus.INVALID:
         reason = "Checkpoint could not be loaded or is corrupted"
@@ -48,10 +49,15 @@ async def get_health():
     db_status_str = "ready" if db_manager.is_available else "unavailable"
     rag_status_str = "ready" if rag_pipe.total_documents > 0 else "empty"
 
+    # Qdrant status
+    qdrant_status = "active" if (rag_pipe.qdrant and rag_pipe.qdrant.is_available) else "disabled"
+
     db_name = f"{settings.MYSQL_DATABASE} ({db_manager.engine_type})"
 
-    # Overall system status: degraded if model is not READY or db is unavailable
-    overall_status = "healthy" if (status == ModelStatus.READY and db_manager.is_available) else "degraded"
+    # Overall system health: degraded if model not READY or db unavailable
+    overall_status = (
+        "healthy" if (status == ModelStatus.READY and db_manager.is_available) else "degraded"
+    )
 
     return HealthResponse(
         status=overall_status,
@@ -68,6 +74,7 @@ async def get_health():
         rag=RagStatusInfo(
             status=rag_status_str,
             documents=rag_pipe.total_documents,
+            vector_store=qdrant_status,
         ),
         database=DatabaseStatusInfo(
             status=db_status_str,
@@ -117,3 +124,16 @@ async def get_knowledge_chunks():
         }
         for c in rag_pipe.chunks
     ]
+
+
+@router.get("/rag/status")
+async def get_rag_status():
+    """Returns detailed RAG and Qdrant vector store status."""
+    rag_pipe = get_rag_pipeline()
+    return {
+        "total_documents": rag_pipe.total_documents,
+        "qdrant_active": bool(rag_pipe.qdrant and rag_pipe.qdrant.is_available),
+        "qdrant_url": settings.QDRANT_URL or "in-memory",
+        "bm25": "active",
+        "tfidf": "active",
+    }

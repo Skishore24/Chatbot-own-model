@@ -23,21 +23,35 @@ GENKIT_CORE_KEYWORDS = {
     "kishore", "hari", "dharani", "deepak", "rahul", "jithesh", "dharanesh", "ananya",
     # Services
     "service", "services", "web", "website", "mobile", "app", "apps", "ai", "ml",
+    "application", "applications", "engineer", "engineering", "developer", "developers",
+    "smartphone", "ios", "android", "flutter",
     "chatbot", "automation", "ui", "ux", "design", "graphic", "branding", "logo",
     "seo", "marketing", "digital", "video", "editing", "motion", "animation",
     "ecommerce", "store", "saas", "portal", "custom", "software", "development",
-    # Technologies
-    "technology", "technologies", "stack", "react", "python", "pytorch", "fastapi",
-    "django", "node", "nodejs", "mysql", "mongodb", "postgresql", "figma",
-    "photoshop", "illustrator", "premiere", "effects", "aws", "cloud",
-    # Pricing & Process
-    "pricing", "quote", "rate", "rates", "package", "packages",
+    # Technologies & Architecture
+    "technology", "technologies", "tech", "stack", "framework", "frameworks", "library", "libraries",
+    "backend", "frontend", "fullstack", "api", "apis", "rest", "graphql",
+    "database", "databases", "sql", "nosql", "mysql", "mongodb", "postgresql", "redis",
+    "react", "nextjs", "vue", "angular", "python", "pytorch", "tensorflow", "fastapi",
+    "django", "flask", "node", "nodejs", "express", "typescript", "javascript",
+    "figma", "photoshop", "illustrator", "premiere", "effects", "aws", "cloud", "docker", "devops",
+    # Pricing, Policies & Process
+    "pricing", "prices", "cost", "quote", "rate", "rates", "package", "packages",
     "budget", "hourly", "timeline", "turnaround", "process", "consultation",
     "hire", "contact", "email", "phone", "support", "revisions", "nda", "refund",
-    # Conversational intent
-    "build", "create", "offer", "provide", "portfolio", "projects", "case",
+    "policy", "policies", "terms", "payment", "payments", "contract", "warranty", "sla",
+    # Conversational intent & Domain terms
+    "build", "create", "offer", "provide", "portfolio", "projects", "case", "study",
+    "specialize", "specializes", "specialized", "specializing", "speciality", "expertise", "skills",
+    "client", "clients", "testimonial", "testimonials", "review", "reviews", "mvp",
 }
 
+GENKIT_OUT_OF_DOMAIN_KEYWORDS = {
+    "stock", "stocks", "shares", "nasdaq", "nyse", "tesla", "crypto", "bitcoin",
+    "ethereum", "weather", "forecast", "recipe", "cookies", "quantum", "schrodinger",
+    "football", "fifa", "worldcup", "olympics", "president", "election",
+    "minister", "celebrity", "movie", "song", "horoscope"
+}
 
 
 class GroundingValidator:
@@ -58,6 +72,11 @@ class GroundingValidator:
         GREETINGS = {"hi", "hello", "hey", "hola", "namaste", "greetings", "sup"}
         if len(query_tokens) <= 2 and any(t in GREETINGS for t in query_tokens):
             return True
+
+        # Explicit out-of-domain guardrail: reject external general trivia
+        has_genkit = "genkit" in query_tokens
+        if not has_genkit and any(t in GENKIT_OUT_OF_DOMAIN_KEYWORDS for t in query_tokens):
+            return False
 
         # Check keyword matches against domain vocabulary
         matches = [t for t in query_tokens if t in GENKIT_CORE_KEYWORDS]
