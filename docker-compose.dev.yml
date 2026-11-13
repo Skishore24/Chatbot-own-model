@@ -23,6 +23,7 @@ services:
     depends_on:
       - mysql
       - qdrant
+      - redis
     environment:
       - HOST=0.0.0.0
       - PORT=8000
@@ -33,6 +34,9 @@ services:
       - MYSQL_PASSWORD=genkit_password
       - MYSQL_DATABASE=genkit_ai
       - QDRANT_URL=http://qdrant:6333
+      - REDIS_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     ports:
       - "8000:8000"
     volumes:
@@ -50,6 +54,15 @@ services:
       - qdrant_data_dev:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
+
+  redis:
+    image: redis:7-alpine
+    container_name: genkit_redis_dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
 
   frontend:
     image: node:20-alpine
@@ -70,4 +83,6 @@ volumes:
   mysql_data_dev:
     driver: local
   qdrant_data_dev:
+    driver: local
+  redis_data_dev:
     driver: local

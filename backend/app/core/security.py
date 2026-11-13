@@ -95,25 +95,12 @@ class SecurityService:
 
     def check_rate_limit(self, client_ip: str, limit_per_minute: Optional[int] = None) -> bool:
         """
-        Sliding-window per-IP rate limiter.
+        Sliding-window per-IP rate limiter (backed by Redis with in-memory fallback).
         Returns True if request is allowed, False if rate limit exceeded.
         """
         limit = limit_per_minute or settings.RATE_LIMIT_PER_MINUTE
-        now = time.time()
-        window_start = now - 60.0
-
-        if client_ip not in self._rate_limits:
-            self._rate_limits[client_ip] = []
-
-        # Keep timestamps within the last 60 seconds
-        self._rate_limits[client_ip] = [t for t in self._rate_limits[client_ip] if t > window_start]
-
-        if len(self._rate_limits[client_ip]) >= limit:
-            logger.warning(f"Rate limit exceeded for IP: {client_ip} ({len(self._rate_limits[client_ip])}/{limit} req/min)")
-            return False
-
-        self._rate_limits[client_ip].append(now)
-        return True
+        from app.core.redis import redis_manager
+        return redis_manager.check_rate_limit(client_ip, limit, window_seconds=60)
 
     def generate_token(self, payload: Dict[str, Any], expires_delta: Optional[timedelta] = None) -> str:
         """Lightweight pure-Python HMAC-SHA256 token generator."""

@@ -30,6 +30,7 @@
 - **Clean Execution Path Separation**: Explicit routing between `llm_rag`, `rag_direct`, and `system` refusal modes.
 - **Real SSE Token Streaming**: Server-Sent Events streaming token-by-token with KV-Cache acceleration.
 - **Dual Database Persistence**: Native MySQL connection pool with automatic local SQLite (`genkit.db`) fallback.
+- **Distributed Redis Cache & Rate Limiting**: Atomic Lua-based sliding-window rate limiting and response caching with automatic zero-overhead in-memory fallback.
 - **Modern React + Vite Frontend**: Responsive UI, lead capture modal, markdown formatting, typing indicators, and session persistence.
 - **Production Docker**: Multi-stage Nginx frontend build and production hardened backend.
 

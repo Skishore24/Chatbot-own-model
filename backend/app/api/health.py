@@ -14,7 +14,8 @@ from typing import List, Dict, Any
 import torch
 
 from app.core.config import settings
-from app.schemas.common import HealthResponse, ModelInfoResponse, ModelStatusInfo, RagStatusInfo, DatabaseStatusInfo
+from app.core.redis import redis_manager
+from app.schemas.common import HealthResponse, ModelInfoResponse, ModelStatusInfo, RagStatusInfo, DatabaseStatusInfo, RedisStatusInfo
 from app.database.connection import db_manager
 from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
@@ -79,6 +80,10 @@ async def get_health():
         database=DatabaseStatusInfo(
             status=db_status_str,
             database=db_name,
+        ),
+        redis=RedisStatusInfo(
+            status=redis_manager.status_string,
+            host=f"{settings.REDIS_HOST}:{settings.REDIS_PORT}" if redis_manager.is_available else None,
         ),
     )
 

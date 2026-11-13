@@ -27,6 +27,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - HOST=0.0.0.0
       - PORT=8000
@@ -39,6 +41,9 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - REDIS_ENABLED=${REDIS_ENABLED:-true}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./backend/datasets:/app/backend/datasets:ro
       - ./backend/genkit-model:/app/backend/genkit-model:ro
@@ -59,6 +64,18 @@ services:
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
 
+  redis:
+    image: redis:7-alpine
+    container_name: genkit_redis_prod
+    restart: always
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   frontend:
     build:
       context: .
@@ -77,4 +94,6 @@ volumes:
   mysql_prod_data:
     driver: local
   qdrant_prod_data:
+    driver: local
+  redis_prod_data:
     driver: local

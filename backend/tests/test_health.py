@@ -25,6 +25,8 @@ def test_health_endpoint_schema(client):
     assert "status" in data["model"]
     assert "rag" in data
     assert "database" in data
+    assert "redis" in data
+    assert data["redis"]["status"] in ["active", "disabled", "unavailable"]
     assert data["rag"]["documents"] > 0
 
 

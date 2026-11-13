@@ -23,3 +23,6 @@ qdrant-client>=1.9.0
 
 # Embedding model for dense retrieval
 sentence-transformers>=3.0.0
+
+# Redis Cache & Distributed Rate Limiting (optional, auto-fallback to in-memory)
+redis>=5.0.0

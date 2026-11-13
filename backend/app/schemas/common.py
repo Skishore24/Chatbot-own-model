@@ -35,6 +35,11 @@ class DatabaseStatusInfo(BaseModel):
     database: str
 
 
+class RedisStatusInfo(BaseModel):
+    status: str  # "active" | "disabled" | "unavailable"
+    host: Optional[str] = None
+
+
 class HealthResponse(BaseModel):
     status: str = "healthy"  # "healthy" or "degraded"
     application: str
@@ -42,6 +47,7 @@ class HealthResponse(BaseModel):
     model: ModelStatusInfo
     rag: RagStatusInfo
     database: DatabaseStatusInfo
+    redis: Optional[RedisStatusInfo] = None
 
 
 class ModelInfoResponse(BaseModel):

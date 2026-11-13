@@ -81,6 +81,13 @@ class AppSettings(BaseSettings):
     QDRANT_URL: str = Field(default="", description="Qdrant server URL, e.g. http://localhost:6333. Leave empty for in-memory mode.")
     QDRANT_API_KEY: str = Field(default="", description="Qdrant Cloud API key (optional).")
 
+    # Redis Cache & Distributed Rate Limiting Configuration
+    REDIS_ENABLED: bool = Field(default=False, description="Enable Redis for distributed caching & rate limiting")
+    REDIS_HOST: str = Field(default="localhost", description="Redis host")
+    REDIS_PORT: int = Field(default=6379, description="Redis port")
+    REDIS_PASSWORD: Optional[str] = Field(default="", description="Redis password (optional)")
+    REDIS_DB: int = Field(default=0, description="Redis database index")
+
     # MySQL Database Configuration
     MYSQL_HOST: str = Field(default="localhost")
     MYSQL_PORT: int = Field(default=3306)

@@ -35,7 +35,22 @@ services:
       timeout: 5s
       retries: 5
 
-  # 3. Genkit AI FastAPI Backend
+  # 3. Redis Cache & Distributed Rate Limiting
+  redis:
+    image: redis:7-alpine
+    container_name: genkit_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 4. Genkit AI FastAPI Backend
   backend:
     build:
       context: .
@@ -46,6 +61,8 @@ services:
       mysql:
         condition: service_healthy
       qdrant:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     environment:
       - HOST=0.0.0.0
@@ -58,6 +75,9 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE:-genkit_ai}
       - SECRET_KEY=${SECRET_KEY:-genkit-ai-v6-production-secret-key-32bytes}
       - QDRANT_URL=http://qdrant:6333
+      - REDIS_ENABLED=true
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     ports:
       - "8000:8000"
     volumes:
@@ -89,4 +109,6 @@ volumes:
   mysql_data:
     driver: local
   qdrant_data:
+    driver: local
+  redis_data:
     driver: local

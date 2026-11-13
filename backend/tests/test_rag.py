@@ -75,6 +75,8 @@ class TestHybridRAG(unittest.TestCase):
 
     def test_hybrid_reranking_with_qdrant(self):
         """Verify hybrid reranker incorporates Qdrant semantic scores."""
+        if not (self.pipeline.qdrant and self.pipeline.qdrant.is_available):
+            self.skipTest("QdrantRetriever not available (dense vectors disabled)")
         chunks, confidence, is_grounded = self.pipeline.retrieve("smartphone application engineering")
         self.assertTrue(is_grounded)
         self.assertTrue(len(chunks) > 0)
