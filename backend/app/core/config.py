@@ -2,6 +2,7 @@
 backend/app/core/config.py
 ----------------------------------------------------
 GENKIT AI v6.1 Configuration Subsystem
+GENKIT AI v6.1 Configuration Subsystem
 Single source of truth for paths, model hyperparameters, RAG parameters, and DB settings.
 """
 
@@ -131,6 +132,10 @@ class AppSettings(BaseSettings):
     RAG_TOP_K: int = Field(default=4)
     RAG_BM25_K1: float = Field(default=1.5)
     RAG_BM25_B: float = Field(default=0.75)
+    RAG_USE_QDRANT: bool = Field(default=True, description="Enable Qdrant dense vector semantic search")
+    RAG_FUSION_BM25_WEIGHT: float = Field(default=0.45)
+    RAG_FUSION_TFIDF_WEIGHT: float = Field(default=0.20)
+    RAG_FUSION_QDRANT_WEIGHT: float = Field(default=0.35)
     RAG_USE_QDRANT: bool = Field(default=True, description="Enable Qdrant dense vector semantic search")
     RAG_FUSION_BM25_WEIGHT: float = Field(default=0.45)
     RAG_FUSION_TFIDF_WEIGHT: float = Field(default=0.20)

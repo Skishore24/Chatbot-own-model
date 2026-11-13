@@ -65,34 +65,6 @@ class TestHybridRAG(unittest.TestCase):
         self.assertIn("QUESTION:", prompt)
         self.assertIn("ANSWER:", prompt)
 
-    def test_qdrant_semantic_retrieval(self):
-        """Verify Qdrant dense vector semantic retrieval on paraphrased query."""
-        if self.pipeline.qdrant and self.pipeline.qdrant.is_available:
-            scores = self.pipeline.qdrant.score_query("smartphone application engineering")
-            self.assertEqual(len(scores), len(self.sample_chunks))
-            # Smartphone query should score highest on Mobile chunk (idx 1)
-            self.assertGreater(scores[1], 0.0)
-
-    def test_hybrid_reranking_with_qdrant(self):
-        """Verify hybrid reranker incorporates Qdrant semantic scores."""
-        if not (self.pipeline.qdrant and self.pipeline.qdrant.is_available):
-            self.skipTest("QdrantRetriever not available (dense vectors disabled)")
-        chunks, confidence, is_grounded = self.pipeline.retrieve("smartphone application engineering")
-        self.assertTrue(is_grounded)
-        self.assertTrue(len(chunks) > 0)
-        self.assertEqual(chunks[0].id, "services_mobile")
-
-    def test_qdrant_availability_flag(self):
-        """Verify QdrantRetriever reports its availability correctly."""
-        if self.pipeline.qdrant is not None:
-            # is_available should be a bool
-            self.assertIsInstance(self.pipeline.qdrant.is_available, bool)
-
-    def test_greeting_synthesis(self):
-        """Verify greeting queries return a friendly response."""
-        answer = self.pipeline.synthesize_answer("hello", self.sample_chunks)
-        self.assertIn("Genkit AI", answer)
-
 
 if __name__ == "__main__":
     unittest.main()

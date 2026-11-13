@@ -92,6 +92,7 @@ services:
       retries: 3
 
   # 4. Production Frontend (Nginx multi-stage bundle)
+  # 4. Production Frontend (Nginx multi-stage bundle)
   frontend:
     build:
       context: .
