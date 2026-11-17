@@ -12,6 +12,7 @@ from app.llm.positional import precompute_freqs_cis, apply_rotary_emb
 from app.llm.attention import CausalGroupedQueryAttention
 from app.llm.inference import load_model_and_tokenizer, get_inference_device
 from app.llm.generation import GenerationEngine
+from app.llm.langchain_wrapper import GenkitLLM
 
 __all__ = [
     "GPTConfig",
@@ -27,4 +28,5 @@ __all__ = [
     "load_model_and_tokenizer",
     "get_inference_device",
     "GenerationEngine",
+    "GenkitLLM",
 ]

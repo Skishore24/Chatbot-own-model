@@ -13,6 +13,7 @@ from app.rag.qdrant import QdrantRetriever
 from app.rag.reranker import HybridReranker
 from app.rag.grounding import GroundingValidator, DOMAIN_REFUSAL_MESSAGE
 from app.rag.pipeline import HybridRAGPipeline, get_rag_pipeline
+from app.rag.langchain_rag import GenkitRAGRetriever, create_genkit_rag_chain, format_docs
 
 __all__ = [
     "DocumentChunk",
@@ -27,4 +28,7 @@ __all__ = [
     "DOMAIN_REFUSAL_MESSAGE",
     "HybridRAGPipeline",
     "get_rag_pipeline",
+    "GenkitRAGRetriever",
+    "create_genkit_rag_chain",
+    "format_docs",
 ]

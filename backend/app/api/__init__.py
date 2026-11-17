@@ -12,6 +12,7 @@ from app.api.leads import router as leads_router
 from app.api.health import router as health_router
 from app.api.history import router as history_router
 from app.api.feedback import router as feedback_router
+from app.api.langchain_api import router as langchain_router
 from app.api.auth import verify_api_key, verify_jwt_token
 
 api_v1_router = APIRouter(prefix="/api/v1")
@@ -21,6 +22,7 @@ api_v1_router.include_router(streaming_router)
 api_v1_router.include_router(leads_router)
 api_v1_router.include_router(history_router)
 api_v1_router.include_router(feedback_router)
+api_v1_router.include_router(langchain_router)
 
 __all__ = ["api_v1_router", "verify_api_key", "verify_jwt_token"]
 

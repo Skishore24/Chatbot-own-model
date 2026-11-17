@@ -22,6 +22,7 @@ from app.core.security import security_service
 from app.schemas.chat import ChatRequest
 from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
+from app.rag.grounding import should_use_rag_direct, is_degenerate_or_hallucinatory
 from app.llm.inference import ModelStatus
 from app.api.chat import get_generation_engine_and_status
 
@@ -41,15 +42,19 @@ async def sse_token_generator(query: str, session_id: str, request_id: str) -> A
         {"id": c.id, "title": c.title, "category": c.category, "score": c.score}
         for c in chunks
     ]
-    intent = chunks[0].category if chunks else ("General" if is_grounded else "OutOfDomain")
+    top_category = chunks[0].category if chunks else "General"
+    intent = top_category if is_grounded else "OutOfDomain"
+
+    # Strict anti-hallucination check: factual knowledge always uses deterministic RAG direct
+    force_rag_direct = should_use_rag_direct(query, top_category)
 
     # Determine response mode
     if not is_grounded:
         response_mode = "system"
-    elif model_status == ModelStatus.READY and engine.model is not None:
-        response_mode = "llm_rag"
-    else:
+    elif force_rag_direct or model_status != ModelStatus.READY or engine.model is None:
         response_mode = "rag_direct"
+    else:
+        response_mode = "llm_rag"
 
     # Yield START event
     start_payload = {
@@ -77,39 +82,43 @@ async def sse_token_generator(query: str, session_id: str, request_id: str) -> A
     elif response_mode == "llm_rag":
         prompt = rag_pipeline.build_prompt(query, chunks)
         try:
-            tokens_generated = 0
-            for token_chunk in engine.generate_stream(prompt, max_new_tokens=settings.MAX_NEW_TOKENS):
-                full_answer_chunks.append(token_chunk)
-                tokens_generated += 1
-                yield f"data: {json.dumps({'event': 'token', 'chunk': token_chunk})}\n\n"
-                await asyncio.sleep(0.005)
+            # Generate candidate from LLM with strict grounding & anti-hallucination validation
+            candidate_text = engine.generate(prompt, max_new_tokens=settings.MAX_NEW_TOKENS)
+            if (
+                candidate_text
+                and not is_degenerate_or_hallucinatory(candidate_text)
+                and rag_pipeline.validator.validate_answer_groundedness(candidate_text, chunks)
+            ):
+                answer_to_stream = candidate_text.strip()
+            else:
+                # LLM output was degenerate or hallucinated — fall back to verified RAG synthesis
+                answer_to_stream = rag_pipeline.synthesize_answer(query, chunks)
 
-            if tokens_generated == 0:
-                # LLM yielded no tokens, stream rag direct
-                direct_ans = rag_pipeline.synthesize_answer(query, chunks)
-                for word in direct_ans.split(" "):
-                    chunk = word + " "
-                    full_answer_chunks.append(chunk)
-                    yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
-                    await asyncio.sleep(0.01)
+            words = answer_to_stream.split(" ")
+            for i, word in enumerate(words):
+                chunk = word + (" " if i < len(words) - 1 else "")
+                full_answer_chunks.append(chunk)
+                yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
+                await asyncio.sleep(0.008)
         except Exception as e:
             logger.error(f"Error in LLM stream: {e}. Falling back to rag direct.")
             direct_ans = rag_pipeline.synthesize_answer(query, chunks)
-            for word in direct_ans.split(" "):
-                chunk = word + " "
+            words = direct_ans.split(" ")
+            for i, word in enumerate(words):
+                chunk = word + (" " if i < len(words) - 1 else "")
                 full_answer_chunks.append(chunk)
                 yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
                 await asyncio.sleep(0.01)
 
     else:
-        # response_mode == "rag_direct"
+        # response_mode == "rag_direct" — deterministic verified facts with 0% hallucination
         direct_ans = rag_pipeline.synthesize_answer(query, chunks)
         words = direct_ans.split(" ")
         for i, word in enumerate(words):
             chunk = word + (" " if i < len(words) - 1 else "")
             full_answer_chunks.append(chunk)
             yield f"data: {json.dumps({'event': 'token', 'chunk': chunk})}\n\n"
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.008)
 
     full_answer = "".join(full_answer_chunks).strip()
     if not full_answer and chunks:

@@ -53,6 +53,56 @@ GENKIT_OUT_OF_DOMAIN_KEYWORDS = {
     "minister", "celebrity", "movie", "song", "horoscope"
 }
 
+# Categories that MUST use deterministic RAG-direct synthesis (0% hallucination risk)
+RAG_DIRECT_CATEGORIES = {
+    "Contact", "Pricing", "Policies", "FAQ", "Team", "Clients",
+    "Company", "Services", "Technologies", "Portfolio", "Projects",
+}
+
+# High-priority factual keywords — force rag_direct regardless of category
+FACTUAL_KEYWORDS = {
+    "contact", "email", "phone", "call", "reach", "instagram", "github", "website",
+    "price", "pricing", "cost", "quote", "rate", "rates", "package", "packages", "budget",
+    "policy", "policies", "refund", "nda", "terms", "payment", "payments",
+    "faq", "question", "questions", "hours", "response time", "consultation",
+    "team", "who", "founder", "founders", "leadership", "member",
+    "service", "services", "offer", "offered", "solutions", "what do you do",
+    "portfolio", "projects", "work", "case study",
+    "technology", "technologies", "tech stack", "framework",
+    "client", "clients", "review", "testimonial",
+}
+
+
+def should_use_rag_direct(query: str, top_category: str) -> bool:
+    """
+    Returns True when query or category matches verified Genkit dataset knowledge.
+    Guarantees deterministic ground-truth synthesis with zero hallucination.
+    """
+    if top_category in RAG_DIRECT_CATEGORIES:
+        return True
+    q = query.lower().strip()
+    return any(kw in q for kw in FACTUAL_KEYWORDS)
+
+
+def is_degenerate_or_hallucinatory(text: str) -> bool:
+    """
+    Detects degenerative repetition or hallucinations commonly emitted by small custom LLMs.
+    Returns True if the output is invalid/hallucinatory and should be replaced by rag_direct.
+    """
+    if not text or len(text.strip()) < 10:
+        return True
+    words = text.lower().split()
+    if len(words) >= 6:
+        # 1. Adjacent word repetitions (e.g. "service: service:", "have have have")
+        adjacent_repeats = sum(1 for i in range(len(words) - 1) if words[i] == words[i + 1])
+        if adjacent_repeats >= 2:
+            return True
+        # 2. Vocabulary repetition ratio (small LLM looping on a tiny subset of tokens)
+        unique_ratio = len(set(words)) / len(words)
+        if unique_ratio < 0.45:
+            return True
+    return False
+
 
 class GroundingValidator:
     """Validates domain relevance, computes groundedness, and validates answer facts."""

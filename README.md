@@ -31,6 +31,7 @@
 - **Real SSE Token Streaming**: Server-Sent Events streaming token-by-token with KV-Cache acceleration.
 - **Dual Database Persistence**: Native MySQL connection pool with automatic local SQLite (`genkit.db`) fallback.
 - **Distributed Redis Cache & Rate Limiting**: Atomic Lua-based sliding-window rate limiting and response caching with automatic zero-overhead in-memory fallback.
+- **LangChain GenAI & LCEL Integration**: First-class `GenkitLLM` and `GenkitRAGRetriever` adapters enabling composable LCEL chains, streaming, and tool execution on top of your 100% self-hosted model.
 - **Modern React + Vite Frontend**: Responsive UI, lead capture modal, markdown formatting, typing indicators, and session persistence.
 - **Production Docker**: Multi-stage Nginx frontend build and production hardened backend.
 

@@ -1,13 +1,8 @@
 # Genkit AI v6.1 Production Backend Dependencies
 
 # Core web framework
-# Genkit AI v6.1 Production Backend Dependencies
-
-# Core web framework
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
-
-# Data validation & settings
 
 # Data validation & settings
 pydantic>=2.0.0
@@ -17,14 +12,7 @@ pydantic-settings>=2.0.0
 torch>=2.0.0
 
 # Databases
-
-# Deep learning (custom LLM)
-torch>=2.0.0
-
-# Databases
 mysql-connector-python>=8.0.33
-
-# Utilities
 
 # Utilities
 python-dotenv>=1.0.0
@@ -38,3 +26,7 @@ sentence-transformers>=3.0.0
 
 # Redis Cache & Distributed Rate Limiting (optional, auto-fallback to in-memory)
 redis>=5.0.0
+
+# Gen AI & Orchestration Framework
+langchain>=0.3.0
+langchain-core>=0.3.0

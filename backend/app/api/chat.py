@@ -22,6 +22,7 @@ from app.core.security import security_service
 from app.schemas.chat import ChatRequest, ChatResponse, ChatSource
 from app.database.repository import ChatRepository
 from app.rag.pipeline import get_rag_pipeline
+from app.rag.grounding import should_use_rag_direct, is_degenerate_or_hallucinatory
 from app.llm.inference import load_model_and_tokenizer, ModelStatus
 from app.llm.generation import GenerationEngine
 
@@ -30,6 +31,11 @@ router = APIRouter(tags=["Chat"])
 # Lazy singleton model runtime & status
 _engine: Optional[GenerationEngine] = None
 _model_status: str = ModelStatus.NOT_FOUND
+
+
+def _should_use_rag_direct(query: str, top_category: str) -> bool:
+    """Returns True when the query is factual/structured and must NOT go through the LLM."""
+    return should_use_rag_direct(query, top_category)
 
 
 def get_generation_engine_and_status() -> Tuple[GenerationEngine, str]:
@@ -85,19 +91,31 @@ async def chat_endpoint(request: ChatRequest, req: Request):
     ]
 
     # 4. Determine Execution Path
+    top_category = chunks[0].category if chunks else "General"
+    force_rag_direct = _should_use_rag_direct(cleaned_query, top_category)
+
     if not is_grounded:
         # Path A: Out-of-Domain Refusal
         answer = rag_pipeline.get_refusal_answer()
         intent = "OutOfDomain"
         response_mode = "system"
         sources = []
-    elif model_status == ModelStatus.READY and engine.model is not None:
-        # Path B: Custom LLM Generation conditioned on RAG context
-        intent = chunks[0].category if chunks else "General"
+    elif force_rag_direct or model_status != ModelStatus.READY or engine.model is None:
+        # Path B: Deterministic RAG Direct — factual/structured queries or model not ready
+        intent = top_category
+        answer = rag_pipeline.synthesize_answer(cleaned_query, chunks)
+        response_mode = "rag_direct"
+    else:
+        # Path C: Custom LLM Generation conditioned on RAG context (open-ended creative queries)
+        intent = top_category
         prompt = rag_pipeline.build_prompt(cleaned_query, chunks)
         try:
             llm_response = engine.generate(prompt, max_new_tokens=settings.MAX_NEW_TOKENS)
-            if llm_response and len(llm_response.strip()) > 10:
+            if (
+                llm_response
+                and not is_degenerate_or_hallucinatory(llm_response)
+                and rag_pipeline.validator.validate_answer_groundedness(llm_response, chunks)
+            ):
                 answer = llm_response.strip()
                 response_mode = "llm_rag"
             else:
@@ -107,11 +125,6 @@ async def chat_endpoint(request: ChatRequest, req: Request):
             logger.error(f"LLM generation failed: {e}. Falling back to rag_direct.")
             answer = rag_pipeline.synthesize_answer(cleaned_query, chunks)
             response_mode = "rag_direct"
-    else:
-        # Path C: Explicit Deterministic RAG Direct Fallback
-        intent = chunks[0].category if chunks else "General"
-        answer = rag_pipeline.synthesize_answer(cleaned_query, chunks)
-        response_mode = "rag_direct"
 
     # 5. Persist Response & Log
     latency_ms = (time.time() - start_time) * 1000

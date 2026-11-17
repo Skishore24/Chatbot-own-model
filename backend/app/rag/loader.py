@@ -276,6 +276,7 @@ def _process_technologies(data: dict, source: str) -> List[DocumentChunk]:
 def _process_contact(data: dict, source: str) -> List[DocumentChunk]:
     chunks = []
     email = data.get("email", "genkit.tech@gmail.com")
+    phone = data.get("phone", "+91 97903 67837")
     website = data.get("website", "https://www.genkit.in")
     form = data.get("contact_form", "https://www.genkit.in/contact")
     channels_list = data.get("channels", [])
@@ -286,11 +287,17 @@ def _process_contact(data: dict, source: str) -> List[DocumentChunk]:
     if isinstance(channels_list, list):
         for ch in channels_list:
             if isinstance(ch, dict):
-                channel_lines.append(f"- **{ch.get('type', '')}**: {ch.get('address') or ch.get('handle', '')} ({ch.get('best_for', '')})")
+                c_type = ch.get("type", "")
+                c_val = ch.get("address") or ch.get("handle") or ""
+                best = ch.get("best_for", "")
+                suffix = f" ({best})" if best else ""
+                channel_lines.append(f"- **{c_type}**: {c_val}{suffix}")
 
+    phone_line = f"- **Phone**: {phone}\n" if phone else ""
     contact_text = (
         f"You can contact Genkit AI easily:\n"
         f"- **Email**: {email}\n"
+        f"{phone_line}"
         f"- **Website**: [{website}]({website})\n"
         f"- **Contact Form**: {form}\n"
         f"- **Response Time**: {resp_time}\n"
@@ -305,7 +312,11 @@ def _process_contact(data: dict, source: str) -> List[DocumentChunk]:
             category="Contact",
             title="Contact Genkit",
             text=contact_text,
-            keywords=["contact", "email", "website", "reach", "hire", "phone", "support", "quote", "form", "genkit.tech@gmail.com", "instagram", "github", "how to contact"],
+            keywords=[
+                "contact", "email", "website", "reach", "hire", "phone", "call", "mobile",
+                "support", "quote", "form", "genkit.tech@gmail.com", "+91 97903 67837",
+                "9790367837", "instagram", "github", "how to contact"
+            ],
             priority=5,
         )
     )
